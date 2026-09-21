@@ -168,6 +168,8 @@ export const PRESET_VIDEOS = [
   },
 ];
 
+export const DEFAULT_GIFT_ADDRESS = 'Jl. Cipete Raya No. 45, Cilandak, Jakarta Selatan 12410 (Kediaman Mempelai, u.p. Ahmad / Siti)';
+
 export function extractYouTubeId(url: string): string | null {
   if (!url) return null;
   const cleanUrl = url.trim();

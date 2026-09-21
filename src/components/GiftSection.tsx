@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
 import { Landmark, Wallet, Copy, Check, Gift, Package, ChevronDown, ChevronUp } from 'lucide-react';
-import { BANK_ACCOUNTS } from '../data/weddingData';
+import { BANK_ACCOUNTS, DEFAULT_GIFT_ADDRESS } from '../data/weddingData';
+import { BankAccount } from '../types';
 
 interface GiftSectionProps {
   onShowToast: (message: string, type?: 'success' | 'copy') => void;
+  banks?: BankAccount[];
+  giftAddress?: string;
 }
 
-export const GiftSection: React.FC<GiftSectionProps> = ({ onShowToast }) => {
+export const GiftSection: React.FC<GiftSectionProps> = ({
+  onShowToast,
+  banks,
+  giftAddress,
+}) => {
+  const activeBanks = banks || BANK_ACCOUNTS;
+  const physicalGiftAddress = giftAddress || DEFAULT_GIFT_ADDRESS;
+
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showAddress, setShowAddress] = useState(false);
 
@@ -20,8 +30,6 @@ export const GiftSection: React.FC<GiftSectionProps> = ({ onShowToast }) => {
       setCopiedId(null);
     }, 2500);
   };
-
-  const physicalGiftAddress = 'Jl. Cipete Raya No. 45, Cilandak, Jakarta Selatan 12410 (Kediaman Mempelai, u.p. Ahmad / Siti)';
 
   return (
     <section id="giftSection" className="px-4 py-4 flex flex-col items-center">
@@ -39,7 +47,7 @@ export const GiftSection: React.FC<GiftSectionProps> = ({ onShowToast }) => {
         </div>
 
         {/* Bank Cards */}
-        {BANK_ACCOUNTS.map((bank) => {
+        {activeBanks.map((bank) => {
           const isBCA = bank.id === 'bca';
           const isCopied = copiedId === bank.id;
 

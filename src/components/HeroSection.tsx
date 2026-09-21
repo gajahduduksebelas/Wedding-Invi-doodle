@@ -1,19 +1,27 @@
 import React, { useState } from 'react';
 import { Heart, Mail, Music, Edit3, Check } from 'lucide-react';
+import { CoupleData } from '../types';
 
 interface HeroSectionProps {
   guestName: string;
   onUpdateGuestName: (newName: string) => void;
   onOpenInvitation: () => void;
+  couple?: CoupleData;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   guestName,
   onUpdateGuestName,
   onOpenInvitation,
+  couple,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(guestName);
+
+  const groomNickname = couple?.groom.nickname || 'Ahmad';
+  const brideNickname = couple?.bride.nickname || 'Siti';
+  const displayDate = couple?.weddingDate || 'Sabtu, 01 Januari 2027';
+  const displayCity = couple?.weddingCity || 'Jakarta';
 
   const handleSaveName = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,10 +66,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
         {/* Couple Big Title */}
         <h1 className="text-[30px] sm:text-[34px] font-bold text-[#cc3a63] tracking-tight leading-tight mt-1 font-heading">
-          Ahmad &amp; Siti
+          {groomNickname} &amp; {brideNickname}
         </h1>
         <p className="text-[14px] font-semibold text-[#7a7065] mt-0.5">
-          Sabtu, 01 Januari 2027 • Jakarta
+          {displayDate} • {displayCity}
         </p>
 
         {/* Envelope Doodle Illustration */}

@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Hourglass, Clock, MapPin, Map, Calendar, Sparkles, Building2 } from 'lucide-react';
 import { COUPLE_DATA, EVENTS_DATA } from '../data/weddingData';
+import { CoupleData, EventDetail } from '../types';
 
-export const CountdownAndEvents: React.FC = () => {
+interface CountdownAndEventsProps {
+  couple?: CoupleData;
+  events?: EventDetail[];
+}
+
+export const CountdownAndEvents: React.FC<CountdownAndEventsProps> = ({ couple, events }) => {
+  const activeCouple = couple || COUPLE_DATA;
+  const activeEvents = events || EVENTS_DATA;
+
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -13,7 +22,7 @@ export const CountdownAndEvents: React.FC = () => {
   useEffect(() => {
     const calculateTime = () => {
       const now = new Date().getTime();
-      const difference = Math.max(0, COUPLE_DATA.targetTimestamp - now);
+      const difference = Math.max(0, activeCouple.targetTimestamp - now);
 
       const days = Math.floor(difference / (1000 * 60 * 60 * 24));
       const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -26,14 +35,14 @@ export const CountdownAndEvents: React.FC = () => {
     calculateTime();
     const interval = setInterval(calculateTime, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [activeCouple.targetTimestamp]);
 
-  const createGoogleCalendarLink = (event: typeof EVENTS_DATA[0]) => {
+  const createGoogleCalendarLink = (event: EventDetail) => {
     const isAkad = event.id === 'akad';
     const startTime = isAkad ? '20270101T010000Z' : '20270101T040000Z'; // 08:00 WIB and 11:00 WIB in UTC
     const endTime = isAkad ? '20270101T030000Z' : '20270101T070000Z';
-    const title = encodeURIComponent(`${event.title}: Ahmad & Siti`);
-    const details = encodeURIComponent(`Pernikahan Ahmad & Siti - ${event.title} di ${event.locationName}`);
+    const title = encodeURIComponent(`${event.title}: ${activeCouple.groom.nickname} & ${activeCouple.bride.nickname}`);
+    const details = encodeURIComponent(`Pernikahan ${activeCouple.groom.name} & ${activeCouple.bride.name} - ${event.title} di ${event.locationName}`);
     const location = encodeURIComponent(`${event.locationName}, ${event.address}`);
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startTime}/${endTime}&details=${details}&location=${location}`;
   };
@@ -88,7 +97,7 @@ export const CountdownAndEvents: React.FC = () => {
         </div>
 
         {/* Event Cards */}
-        {EVENTS_DATA.map((event) => {
+        {activeEvents.map((event) => {
           const isAkad = event.id === 'akad';
           return (
             <div

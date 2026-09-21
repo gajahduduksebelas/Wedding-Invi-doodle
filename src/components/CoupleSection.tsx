@@ -1,8 +1,14 @@
 import React from 'react';
 import { Heart, Instagram } from 'lucide-react';
 import { COUPLE_DATA } from '../data/weddingData';
+import { CoupleData } from '../types';
 
-export const CoupleSection: React.FC = () => {
+interface CoupleSectionProps {
+  couple?: CoupleData;
+}
+
+export const CoupleSection: React.FC<CoupleSectionProps> = ({ couple }) => {
+  const activeCouple = couple || COUPLE_DATA;
   return (
     <section id="coupleSection" className="px-4 py-4 flex flex-col items-center">
       <div className="w-full max-w-[420px] flex flex-col gap-4">
@@ -19,26 +25,26 @@ export const CoupleSection: React.FC = () => {
         <div className="rounded-2xl bg-white p-5 shadow-[3px_4px_0px_#4a4238] border-2 border-[#4a4238] flex flex-col items-center text-center relative">
           <div className="w-28 h-28 rounded-full overflow-hidden shadow-[2px_3px_0px_#4a4238] border-2 border-[#4a4238] mb-3 relative bg-[#f9f0e0]">
             <img
-              src={COUPLE_DATA.groom.image}
-              alt={COUPLE_DATA.groom.alt}
+              src={activeCouple.groom.image}
+              alt={activeCouple.groom.alt || activeCouple.groom.name}
               className="w-full h-full object-cover"
               loading="lazy"
             />
           </div>
           <h3 className="text-[20px] font-bold text-[#cc3a63] font-heading">
-            {COUPLE_DATA.groom.name}
+            {activeCouple.groom.name}
           </h3>
           <p className="text-[13px] font-semibold text-[#524348] mt-1 max-w-[260px] leading-snug">
-            {COUPLE_DATA.groom.role}
+            {activeCouple.groom.role}
           </p>
           <a
-            href={`https://instagram.com/${COUPLE_DATA.groom.instagram}`}
+            href={`https://instagram.com/${activeCouple.groom.instagram}`}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#f9f0e0] text-[#2b2620] text-[12px] font-bold shadow-sm border border-[#e6dac5] hover:bg-[#edd9bf] active:scale-95 transition-all"
           >
             <Instagram className="w-3.5 h-3.5 text-[#cc3a63]" />
-            <span>@{COUPLE_DATA.groom.instagram}</span>
+            <span>@{activeCouple.groom.instagram}</span>
           </a>
         </div>
 
@@ -53,26 +59,26 @@ export const CoupleSection: React.FC = () => {
         <div className="rounded-2xl bg-white p-5 shadow-[3px_4px_0px_#4a4238] border-2 border-[#4a4238] flex flex-col items-center text-center relative">
           <div className="w-28 h-28 rounded-full overflow-hidden shadow-[2px_3px_0px_#4a4238] border-2 border-[#4a4238] mb-3 relative bg-[#f9f0e0]">
             <img
-              src={COUPLE_DATA.bride.image}
-              alt={COUPLE_DATA.bride.alt}
+              src={activeCouple.bride.image}
+              alt={activeCouple.bride.alt || activeCouple.bride.name}
               className="w-full h-full object-cover"
               loading="lazy"
             />
           </div>
           <h3 className="text-[20px] font-bold text-[#cc3a63] font-heading">
-            {COUPLE_DATA.bride.name}
+            {activeCouple.bride.name}
           </h3>
           <p className="text-[13px] font-semibold text-[#524348] mt-1 max-w-[260px] leading-snug">
-            {COUPLE_DATA.bride.role}
+            {activeCouple.bride.role}
           </p>
           <a
-            href={`https://instagram.com/${COUPLE_DATA.bride.instagram}`}
+            href={`https://instagram.com/${activeCouple.bride.instagram}`}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#f9f0e0] text-[#2b2620] text-[12px] font-bold shadow-sm border border-[#e6dac5] hover:bg-[#edd9bf] active:scale-95 transition-all"
           >
             <Instagram className="w-3.5 h-3.5 text-[#cc3a63]" />
-            <span>@{COUPLE_DATA.bride.instagram}</span>
+            <span>@{activeCouple.bride.instagram}</span>
           </a>
         </div>
       </div>

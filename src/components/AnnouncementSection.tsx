@@ -1,12 +1,15 @@
 import React from 'react';
 import { ChevronDown, Sparkles } from 'lucide-react';
 import { COUPLE_DATA } from '../data/weddingData';
+import { CoupleData } from '../types';
 
 interface AnnouncementSectionProps {
   onScrollNext: () => void;
+  couple?: CoupleData;
 }
 
-export const AnnouncementSection: React.FC<AnnouncementSectionProps> = ({ onScrollNext }) => {
+export const AnnouncementSection: React.FC<AnnouncementSectionProps> = ({ onScrollNext, couple }) => {
+  const activeCouple = couple || COUPLE_DATA;
   return (
     <section
       id="announcementSection"
@@ -124,8 +127,8 @@ export const AnnouncementSection: React.FC<AnnouncementSectionProps> = ({ onScro
 
                   {/* Clipped Image: Siti */}
                   <img
-                    src={COUPLE_DATA.bride.image}
-                    alt={COUPLE_DATA.bride.name}
+                    src={activeCouple.bride.image}
+                    alt={activeCouple.bride.name}
                     className="absolute inset-0 w-full h-full object-cover scale-110"
                     style={{
                       clipPath:
@@ -182,8 +185,8 @@ export const AnnouncementSection: React.FC<AnnouncementSectionProps> = ({ onScro
 
                   {/* Clipped Image: Ahmad */}
                   <img
-                    src={COUPLE_DATA.groom.image}
-                    alt={COUPLE_DATA.groom.name}
+                    src={activeCouple.groom.image}
+                    alt={activeCouple.groom.name}
                     className="absolute inset-0 w-full h-full object-cover scale-110"
                     style={{
                       clipPath:
@@ -251,7 +254,7 @@ export const AnnouncementSection: React.FC<AnnouncementSectionProps> = ({ onScro
         <div className="mt-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#f9f0e0] border border-[#4a4238] shadow-[2px_2px_0px_#4a4238]">
           <Sparkles className="w-3.5 h-3.5 text-[#cc3a63]" />
           <span className="text-[13px] font-bold text-[#211b12]">
-            Ahmad Fadli &amp; Siti Nurhaliza
+            {activeCouple.groom.name} &amp; {activeCouple.bride.name}
           </span>
           <Sparkles className="w-3.5 h-3.5 text-[#cc3a63]" />
         </div>

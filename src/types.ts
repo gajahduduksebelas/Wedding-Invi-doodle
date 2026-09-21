@@ -45,3 +45,42 @@ export interface VideoConfig {
   title: string;
   subtitle: string;
 }
+
+export interface CouplePerson {
+  name: string;
+  nickname: string;
+  role: string;
+  instagram: string;
+  image: string;
+  alt: string;
+}
+
+export interface CoupleData {
+  groom: CouplePerson;
+  bride: CouplePerson;
+  weddingDate: string;
+  weddingCity: string;
+  targetTimestamp: number;
+  audioUrl: string;
+}
+
+export interface WhatsAppGuest {
+  id: string;
+  name: string;
+  phone: string;
+  category: 'Keluarga' | 'Sahabat' | 'VIP' | 'Rekan Kerja' | 'Tetangga' | 'Umum';
+  session: 'Akad & Resepsi' | 'Resepsi' | 'Akad Saja';
+  status: 'pending' | 'sent';
+  sentAt?: string;
+  notes?: string;
+}
+
+export interface AppSettings {
+  couple: CoupleData;
+  events: EventDetail[];
+  video: VideoConfig;
+  banks: BankAccount[];
+  photos: GalleryPhoto[];
+  giftAddress: string;
+}
+

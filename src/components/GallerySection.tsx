@@ -4,7 +4,12 @@ import { GalleryPhoto } from '../types';
 import { PhotoLightbox } from './PhotoLightbox';
 import { ZoomIn } from 'lucide-react';
 
-export const GallerySection: React.FC = () => {
+interface GallerySectionProps {
+  photos?: GalleryPhoto[];
+}
+
+export const GallerySection: React.FC<GallerySectionProps> = ({ photos }) => {
+  const activePhotos = photos || GALLERY_PHOTOS;
   const [selectedPhoto, setSelectedPhoto] = useState<GalleryPhoto | null>(null);
 
   return (
@@ -21,7 +26,7 @@ export const GallerySection: React.FC = () => {
 
         {/* Playful Scrapbook Polaroid Grid */}
         <div className="grid grid-cols-2 gap-3.5">
-          {GALLERY_PHOTOS.map((photo) => (
+          {activePhotos.map((photo) => (
             <div
               key={photo.id}
               onClick={() => setSelectedPhoto(photo)}
@@ -48,7 +53,7 @@ export const GallerySection: React.FC = () => {
       {/* Lightbox Modal */}
       <PhotoLightbox
         photo={selectedPhoto}
-        photos={GALLERY_PHOTOS}
+        photos={activePhotos}
         onClose={() => setSelectedPhoto(null)}
         onSelectPhoto={(p) => setSelectedPhoto(p)}
       />
