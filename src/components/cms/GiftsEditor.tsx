@@ -229,6 +229,25 @@ export const GiftsEditor: React.FC<GiftsEditorProps> = ({
           className="w-full p-3 rounded-xl border border-[#4a4238] bg-[#fdfaf5] text-[13px] text-[#2b2620] focus:outline-none leading-relaxed"
         />
       </div>
+
+      {/* Sticky Mobile Save Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 p-3 bg-[#fffdfa]/95 backdrop-blur-md border-t-2 border-[#4a4238] flex items-center justify-between gap-2 max-w-[960px] mx-auto sm:hidden">
+        <button
+          type="button"
+          onClick={handleReset}
+          className="inline-flex items-center gap-1 px-4 py-2.5 rounded-xl bg-[#f9f0e0] text-[#2b2620] text-[12px] font-bold border border-[#4a4238]"
+        >
+          <RotateCcw className="w-4 h-4" />
+          <span>Reset</span>
+        </button>
+        <button
+          type="submit"
+          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-[#cc3a63] text-white text-[13px] font-bold shadow-[2px_2px_0px_#4a4238] border border-[#4a4238] active:scale-95 transition-all"
+        >
+          <Save className="w-4 h-4" />
+          <span>Simpan Rekening ({bankList.length})</span>
+        </button>
+      </div>
     </form>
   );
 };

@@ -1,6 +1,8 @@
 {
-  "name": "Ahmad & Siti Wedding Invitation",
+  "name": "Wedding Invitation Theme",
   "description": "Undangan pernikahan digital Ahmad Fadli & Siti Nurhaliza dengan nuansa whimsical doodle, musik latar, galeri foto, hitung mundur, amplop digital, dan buku tamu RSVP.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

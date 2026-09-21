@@ -305,6 +305,22 @@ export default function App() {
     }
   };
 
+  // Listen to popstate or hashchange for back/forward and direct hash navigation
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const params = new URLSearchParams(window.location.search);
+      const isCms = params.get('page') === 'cms' || window.location.hash === '#cms';
+      setCurrentView(isCms ? 'cms' : 'invitation');
+    };
+
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
+  }, []);
+
   // If viewing CMS Dashboard
   if (currentView === 'cms') {
     return (

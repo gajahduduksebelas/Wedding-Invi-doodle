@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Settings2 } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { CoupleData } from '../types';
 
 interface ClosingSectionProps {
@@ -31,21 +31,20 @@ export const ClosingSection: React.FC<ClosingSectionProps> = ({ couple, onOpenCm
         </p>
       </div>
 
-      <div className="mt-4 flex flex-col items-center gap-2">
-        <div className="px-3.5 py-1 rounded-full bg-[#f9f0e0] text-[11px] font-bold text-[#524348] border border-[#e6dac5] shadow-sm">
-          Dibuat sendiri oleh Fadly💖
-        </div>
-
-        {onOpenCms && (
+      <div className="mt-4">
+        {onOpenCms ? (
           <button
             type="button"
             onClick={onOpenCms}
-            className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] text-[#7a7065] hover:text-[#2b2620] hover:bg-[#edd9bf]/40 transition-colors opacity-70 hover:opacity-100 cursor-pointer"
-            title="Kelola Undangan & WhatsApp Blaster"
+            className="px-3.5 py-1 rounded-full bg-[#f9f0e0] text-[11px] font-bold text-[#524348] border border-[#e6dac5] shadow-sm hover:border-[#4a4238] transition-colors cursor-pointer"
+            title="Dibuat sendiri oleh Fadly💖"
           >
-            <Settings2 className="w-3.5 h-3.5" />
-            <span>Panel Pengantin (CMS)</span>
+            Dibuat sendiri oleh Fadly💖
           </button>
+        ) : (
+          <div className="px-3.5 py-1 rounded-full bg-[#f9f0e0] text-[11px] font-bold text-[#524348] border border-[#e6dac5] shadow-sm">
+            Dibuat sendiri oleh Fadly💖
+          </div>
         )}
       </div>
     </footer>

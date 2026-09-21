@@ -11,10 +11,10 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   onTabChange,
 }) => {
   const tabs = [
-    { id: 'invite', label: 'Invite', targetId: 'heroSection', icon: Mail },
-    { id: 'schedule', label: 'Schedule', targetId: 'scheduleSection', icon: Calendar },
-    { id: 'doodles', label: 'Doodles', targetId: 'rsvpSection', icon: MessageSquareHeart },
-    { id: 'registry', label: 'Registry', targetId: 'giftSection', icon: Gift },
+    { id: 'invite', label: 'Undangan', targetId: 'heroSection', icon: Mail },
+    { id: 'schedule', label: 'Acara', targetId: 'scheduleSection', icon: Calendar },
+    { id: 'doodles', label: 'RSVP', targetId: 'rsvpSection', icon: MessageSquareHeart },
+    { id: 'registry', label: 'Kado', targetId: 'giftSection', icon: Gift },
   ];
 
   const handleTabClick = (tabId: string, targetId: string) => {

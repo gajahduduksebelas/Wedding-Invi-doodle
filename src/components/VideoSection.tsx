@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, Video, Film, Sparkles, Volume2 } from 'lucide-react';
+import { ExternalLink, Video, Film, Sparkles, Volume2, Play } from 'lucide-react';
 import { VideoConfig } from '../types';
 import { extractYouTubeId } from '../data/weddingData';
 
@@ -8,7 +8,12 @@ interface VideoSectionProps {
 }
 
 export const VideoSection: React.FC<VideoSectionProps> = ({ videoConfig }) => {
-  const videoId = extractYouTubeId(videoConfig.youtubeUrl);
+  const isDirectVideo =
+    videoConfig.sourceType === 'upload' ||
+    videoConfig.sourceType === 'direct' ||
+    Boolean(videoConfig.directVideoUrl && !videoConfig.youtubeUrl);
+
+  const videoId = extractYouTubeId(videoConfig.youtubeUrl || '');
 
   return (
     <section id="videoSection" className="px-4 py-4 flex flex-col items-center">
@@ -39,7 +44,9 @@ export const VideoSection: React.FC<VideoSectionProps> = ({ videoConfig }) => {
           <div className="flex items-center justify-between px-1 pt-1 pb-0.5 text-[#847279]">
             <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#524348]">
               <Film className="w-3.5 h-3.5 text-[#cc3a63]" />
-              <span>Teaser Prewedding Video</span>
+              <span>
+                {isDirectVideo ? 'Video Galeri Pribadi' : 'Teaser Prewedding Video'}
+              </span>
             </div>
             <div className="flex items-center gap-1 text-[11px] text-[#51582f] font-bold">
               <Sparkles className="w-3 h-3" />
@@ -47,11 +54,21 @@ export const VideoSection: React.FC<VideoSectionProps> = ({ videoConfig }) => {
             </div>
           </div>
 
-          {/* 16:9 Responsive Video Frame with Autoplay */}
+          {/* 16:9 Responsive Video Frame */}
           <div className="relative w-full aspect-video rounded-xl overflow-hidden border-2 border-[#4a4238] bg-[#211b12] shadow-inner flex items-center justify-center">
-            {videoId ? (
+            {isDirectVideo && videoConfig.directVideoUrl ? (
+              <video
+                src={videoConfig.directVideoUrl}
+                controls
+                playsInline
+                autoPlay={videoConfig.autoplay !== false}
+                muted={videoConfig.muted !== false}
+                loop={videoConfig.loop !== false}
+                className="w-full h-full object-cover"
+              />
+            ) : videoId ? (
               <iframe
-                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1&loop=1&playlist=${videoId}`}
+                src={`https://www.youtube.com/embed/${videoId}?autoplay=${videoConfig.autoplay !== false ? '1' : '0'}&mute=${videoConfig.muted !== false ? '1' : '0'}&playsinline=1&rel=0&modestbranding=1&loop=${videoConfig.loop !== false ? '1' : '0'}&playlist=${videoId}`}
                 title={videoConfig.title || 'Wedding Prewedding Video'}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
@@ -67,7 +84,12 @@ export const VideoSection: React.FC<VideoSectionProps> = ({ videoConfig }) => {
 
           {/* Bottom Action Bar */}
           <div className="flex items-center justify-between gap-2 pt-1">
-            {videoId ? (
+            {isDirectVideo ? (
+              <span className="text-[11px] text-[#51582f] font-bold flex items-center gap-1">
+                <Play className="w-3.5 h-3.5 text-[#cc3a63]" />
+                <span>Video MP4 Tersimpan</span>
+              </span>
+            ) : videoId ? (
               <a
                 href={`https://www.youtube.com/watch?v=${videoId}`}
                 target="_blank"
@@ -78,7 +100,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({ videoConfig }) => {
                 <span>Buka di YouTube</span>
               </a>
             ) : (
-              <span className="text-[11px] text-[#7a7065] italic">Format video YouTube</span>
+              <span className="text-[11px] text-[#7a7065] italic">Format video fleksibel</span>
             )}
 
             <span className="text-[11px] text-[#7a7065] font-medium flex items-center gap-1">
@@ -91,4 +113,3 @@ export const VideoSection: React.FC<VideoSectionProps> = ({ videoConfig }) => {
     </section>
   );
 };
-

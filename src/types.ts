@@ -41,9 +41,15 @@ export interface BankAccount {
 }
 
 export interface VideoConfig {
+  sourceType?: 'youtube' | 'upload' | 'direct';
   youtubeUrl: string;
+  directVideoUrl?: string;
+  videoFileName?: string;
   title: string;
   subtitle: string;
+  autoplay?: boolean;
+  muted?: boolean;
+  loop?: boolean;
 }
 
 export interface CouplePerson {
@@ -62,6 +68,8 @@ export interface CoupleData {
   weddingCity: string;
   targetTimestamp: number;
   audioUrl: string;
+  audioFileName?: string;
+  audioTitle?: string;
 }
 
 export interface WhatsAppGuest {

@@ -141,7 +141,7 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
       </header>
 
       {/* 2. Navigation Tabs Bar */}
-      <nav className="bg-[#f9f0e0] border-b border-[#4a4238] px-4 py-2 sticky top-[57px] z-30 overflow-x-auto scrollbar-none">
+      <nav className="bg-[#f9f0e0] border-b border-[#4a4238] px-3 sm:px-4 py-2 sticky top-[57px] z-30 overflow-x-auto scrollbar-none shadow-xs">
         <div className="max-w-[1040px] mx-auto flex items-center gap-1.5 min-w-max">
           {/* Tab 1: WA Blaster */}
           <button
@@ -182,7 +182,21 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
             <span>Mempelai &amp; Acara</span>
           </button>
 
-          {/* Tab 3: Video Prewedding */}
+          {/* Tab 3: Galeri Foto */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('gallery')}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[12px] font-bold border transition-all cursor-pointer ${
+              activeTab === 'gallery'
+                ? 'bg-[#cc3a63] text-white border-[#4a4238] shadow-[2px_2px_0px_#4a4238]'
+                : 'bg-white hover:bg-[#fff7eb] text-[#2b2620] border-[#d8c8b4]'
+            }`}
+          >
+            <ImageIcon className="w-3.5 h-3.5" />
+            <span>Galeri Foto ({photos.length})</span>
+          </button>
+
+          {/* Tab 4: Video Prewedding */}
           <button
             type="button"
             onClick={() => setActiveTab('video')}
@@ -196,7 +210,7 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
             <span>Video Prewedding</span>
           </button>
 
-          {/* Tab 4: Rekening & Kado */}
+          {/* Tab 5: Rekening & Kado */}
           <button
             type="button"
             onClick={() => setActiveTab('gifts')}
@@ -208,20 +222,6 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
           >
             <Landmark className="w-3.5 h-3.5" />
             <span>Rekening &amp; Kado</span>
-          </button>
-
-          {/* Tab 5: Galeri Foto */}
-          <button
-            type="button"
-            onClick={() => setActiveTab('gallery')}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[12px] font-bold border transition-all cursor-pointer ${
-              activeTab === 'gallery'
-                ? 'bg-[#cc3a63] text-white border-[#4a4238] shadow-[2px_2px_0px_#4a4238]'
-                : 'bg-white hover:bg-[#fff7eb] text-[#2b2620] border-[#d8c8b4]'
-            }`}
-          >
-            <ImageIcon className="w-3.5 h-3.5" />
-            <span>Galeri Foto</span>
           </button>
 
           {/* Tab 6: Buku Tamu & RSVP */}
@@ -250,7 +250,7 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
       </nav>
 
       {/* 3. Main Content View Area */}
-      <main className="flex-1 p-4 sm:p-6">
+      <main className="flex-1 p-3.5 sm:p-6 pb-28 sm:pb-12 max-w-[1040px] w-full mx-auto">
         {activeTab === 'wa-blaster' && (
           <WhatsappBlaster
             guests={waGuests}

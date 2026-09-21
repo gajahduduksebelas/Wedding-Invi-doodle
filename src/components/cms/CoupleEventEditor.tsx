@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Heart, Calendar, Clock, MapPin, Music, Sparkles, Save, RotateCcw } from 'lucide-react';
+import { Heart, Calendar, Clock, MapPin, Music, Sparkles, Save, RotateCcw, Upload, Crop } from 'lucide-react';
 import { CoupleData, EventDetail } from '../../types';
 import { COUPLE_DATA, EVENTS_DATA } from '../../data/weddingData';
+import { ImageCropperModal } from './ImageCropperModal';
+import { AudioUploader } from './AudioUploader';
 
 interface CoupleEventEditorProps {
   couple: CoupleData;
@@ -18,6 +20,29 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
 }) => {
   const [formData, setFormData] = useState<CoupleData>(couple);
   const [eventsData, setEventsData] = useState<EventDetail[]>(events);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [cropperTarget, setCropperTarget] = useState<'groom' | 'bride'>('groom');
+
+  const handleOpenCropper = (target: 'groom' | 'bride') => {
+    setCropperTarget(target);
+    setCropperOpen(true);
+  };
+
+  const handlePersonCropComplete = (croppedDataUrl: string) => {
+    if (cropperTarget === 'groom') {
+      setFormData((prev) => ({
+        ...prev,
+        groom: { ...prev.groom, image: croppedDataUrl },
+      }));
+      onShowToast('Foto mempelai pria berhasil diupdate & dipotong! 🤵');
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        bride: { ...prev.bride, image: croppedDataUrl },
+      }));
+      onShowToast('Foto mempelai wanita berhasil diupdate & dipotong! 👰');
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,30 +178,44 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
           </div>
 
           <div>
-            <label className="text-[11px] font-bold text-[#7a7065] block uppercase">
-              Foto URL Mempelai Pria
-            </label>
-            <input
-              type="url"
-              value={formData.groom.image}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  groom: { ...formData.groom, image: e.target.value },
-                })
-              }
-              className="w-full mt-1 px-3 py-2 rounded-xl border border-[#4a4238] bg-[#fdfaf5] text-[12px] font-mono text-[#2b2620] focus:outline-none"
-            />
-            {formData.groom.image && (
-              <div className="mt-2 flex items-center gap-2">
-                <img
-                  src={formData.groom.image}
-                  alt="Groom"
-                  className="w-10 h-10 rounded-full object-cover border border-[#4a4238]"
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-[11px] font-bold text-[#7a7065] block uppercase">
+                Foto Mempelai Pria (Avatar)
+              </label>
+              <button
+                type="button"
+                onClick={() => handleOpenCropper('groom')}
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-[#51582f] text-white text-[11px] font-bold border border-[#4a4238] shadow-xs hover:bg-[#434926] cursor-pointer"
+              >
+                <Upload className="w-3 h-3" />
+                <span>Upload &amp; Crop</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#fdfaf5] border border-[#e6dac5]">
+              <img
+                src={formData.groom.image || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300'}
+                alt="Groom avatar"
+                className="w-14 h-14 rounded-full object-cover border-2 border-[#4a4238] shadow-sm shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <input
+                  type="url"
+                  value={formData.groom.image}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      groom: { ...formData.groom, image: e.target.value },
+                    })
+                  }
+                  placeholder="Atau tempel URL foto..."
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-[#e6dac5] bg-white text-[12px] font-mono text-[#2b2620] focus:outline-none"
                 />
-                <span className="text-[11px] text-[#7a7065]">Pratinjau foto pengantin pria</span>
+                <span className="text-[10px] text-[#7a7065] mt-1 block">
+                  Ketuk tombol Upload &amp; Crop untuk memilih langsung dari galeri HP
+                </span>
               </div>
-            )}
+            </div>
           </div>
         </div>
 
@@ -261,40 +300,54 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
           </div>
 
           <div>
-            <label className="text-[11px] font-bold text-[#7a7065] block uppercase">
-              Foto URL Mempelai Wanita
-            </label>
-            <input
-              type="url"
-              value={formData.bride.image}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  bride: { ...formData.bride, image: e.target.value },
-                })
-              }
-              className="w-full mt-1 px-3 py-2 rounded-xl border border-[#4a4238] bg-[#fdfaf5] text-[12px] font-mono text-[#2b2620] focus:outline-none"
-            />
-            {formData.bride.image && (
-              <div className="mt-2 flex items-center gap-2">
-                <img
-                  src={formData.bride.image}
-                  alt="Bride"
-                  className="w-10 h-10 rounded-full object-cover border border-[#4a4238]"
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-[11px] font-bold text-[#7a7065] block uppercase">
+                Foto Mempelai Wanita (Avatar)
+              </label>
+              <button
+                type="button"
+                onClick={() => handleOpenCropper('bride')}
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-[#cc3a63] text-white text-[11px] font-bold border border-[#4a4238] shadow-xs hover:bg-[#b52d53] cursor-pointer"
+              >
+                <Upload className="w-3 h-3" />
+                <span>Upload &amp; Crop</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#fdfaf5] border border-[#e6dac5]">
+              <img
+                src={formData.bride.image || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300'}
+                alt="Bride avatar"
+                className="w-14 h-14 rounded-full object-cover border-2 border-[#4a4238] shadow-sm shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <input
+                  type="url"
+                  value={formData.bride.image}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      bride: { ...formData.bride, image: e.target.value },
+                    })
+                  }
+                  placeholder="Atau tempel URL foto..."
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-[#e6dac5] bg-white text-[12px] font-mono text-[#2b2620] focus:outline-none"
                 />
-                <span className="text-[11px] text-[#7a7065]">Pratinjau foto pengantin wanita</span>
+                <span className="text-[10px] text-[#7a7065] mt-1 block">
+                  Ketuk tombol Upload &amp; Crop untuk memilih langsung dari galeri HP
+                </span>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Wedding Date, City, Countdown & Audio */}
+      {/* Wedding Date, City & Countdown */}
       <div className="rounded-2xl bg-white p-5 border-2 border-[#4a4238] shadow-[3px_4px_0px_#4a4238] flex flex-col gap-4">
         <div className="flex items-center gap-2 pb-2 border-b border-[#e6dac5]">
           <Calendar className="w-5 h-5 text-[#cc3a63]" />
           <h3 className="text-[16px] font-bold text-[#2b2620] font-heading">
-            Waktu Pernikahan, Hitung Mundur &amp; Musik Latar
+            Waktu Pernikahan &amp; Hitung Mundur
           </h3>
         </div>
 
@@ -340,19 +393,23 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
             />
           </div>
         </div>
-
-        <div>
-          <label className="text-[11px] font-bold text-[#7a7065] block uppercase">
-            Audio Background Music URL (.mp3)
-          </label>
-          <input
-            type="url"
-            value={formData.audioUrl}
-            onChange={(e) => setFormData({ ...formData, audioUrl: e.target.value })}
-            className="w-full mt-1 px-3 py-2 rounded-xl border border-[#4a4238] bg-[#fdfaf5] text-[12px] font-mono text-[#2b2620] focus:outline-none"
-          />
-        </div>
       </div>
+
+      {/* Direct MP3 Audio Uploader & Selector */}
+      <AudioUploader
+        currentUrl={formData.audioUrl}
+        currentFileName={formData.audioFileName}
+        currentTitle={formData.audioTitle}
+        onChange={(url, fileName, title) =>
+          setFormData((prev) => ({
+            ...prev,
+            audioUrl: url,
+            audioFileName: fileName,
+            audioTitle: title,
+          }))
+        }
+        onShowToast={onShowToast}
+      />
 
       {/* Events: Akad & Resepsi */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -477,6 +534,39 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
           <span>Simpan Data Mempelai &amp; Acara</span>
         </button>
       </div>
+
+      {/* Sticky Mobile Save Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 p-3 bg-[#fffdfa]/95 backdrop-blur-md border-t-2 border-[#4a4238] flex items-center justify-between gap-2 max-w-[960px] mx-auto sm:hidden">
+        <button
+          type="button"
+          onClick={handleResetDefaults}
+          className="inline-flex items-center gap-1 px-4 py-2.5 rounded-xl bg-[#f9f0e0] text-[#2b2620] text-[12px] font-bold border border-[#4a4238]"
+        >
+          <RotateCcw className="w-4 h-4" />
+          <span>Reset</span>
+        </button>
+        <button
+          type="submit"
+          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-[#cc3a63] text-white text-[13px] font-bold shadow-[2px_2px_0px_#4a4238] border border-[#4a4238] active:scale-95 transition-all"
+        >
+          <Save className="w-4 h-4" />
+          <span>Simpan Perubahan</span>
+        </button>
+      </div>
+
+      {/* Image Cropper Modal */}
+      <ImageCropperModal
+        isOpen={cropperOpen}
+        onClose={() => setCropperOpen(false)}
+        initialImage={cropperTarget === 'groom' ? formData.groom.image : formData.bride.image}
+        onCropComplete={handlePersonCropComplete}
+        targetAspectRatio="1:1"
+        title={
+          cropperTarget === 'groom'
+            ? 'Upload & Crop Foto Pengantin Pria (1:1)'
+            : 'Upload & Crop Foto Pengantin Wanita (1:1)'
+        }
+      />
     </form>
   );
 };

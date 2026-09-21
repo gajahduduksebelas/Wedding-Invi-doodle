@@ -14,12 +14,14 @@ import {
   Sparkles,
   RefreshCw,
   FileSpreadsheet,
+  Download,
   HelpCircle,
   Eye,
   Sliders,
   Share2,
 } from 'lucide-react';
 import { WhatsAppGuest, CoupleData, EventDetail } from '../../types';
+import { GuestCsvImporter, downloadGuestCsvTemplate } from './GuestCsvImporter';
 import {
   DEFAULT_WA_TEMPLATES,
   formatWhatsAppPhone,
@@ -62,9 +64,8 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
   const [singleSession, setSingleSession] = useState<WhatsAppGuest['session']>('Resepsi');
   const [singleNotes, setSingleNotes] = useState('');
 
-  // Bulk Import Form
+  // Bulk Import Modal State
   const [isBulkOpen, setIsBulkOpen] = useState(false);
-  const [bulkText, setBulkText] = useState('');
 
   // Active preview guest (for chat preview)
   const [previewGuestIndex, setPreviewGuestIndex] = useState(0);
@@ -118,59 +119,6 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
     setSinglePhone('');
     setSingleNotes('');
     onShowToast(`Tamu "${newGuest.name}" berhasil ditambahkan! 🎉`);
-  };
-
-  // Bulk import guests
-  const handleBulkImport = () => {
-    if (!bulkText.trim()) return;
-
-    const lines = bulkText.split('\n');
-    const newItems: WhatsAppGuest[] = [];
-
-    lines.forEach((line) => {
-      const cleanLine = line.trim();
-      if (!cleanLine) return;
-
-      // Support comma, tab, or dash separation: Name, Phone, Category
-      const parts = cleanLine.includes(',')
-        ? cleanLine.split(',')
-        : cleanLine.includes('\t')
-        ? cleanLine.split('\t')
-        : cleanLine.split('-');
-
-      const name = parts[0]?.trim();
-      const phone = parts[1]?.trim() || '';
-      const cat = (parts[2]?.trim() as WhatsAppGuest['category']) || 'Sahabat';
-
-      if (name) {
-        newItems.push({
-          id: `g-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-          name,
-          phone,
-          category: ['Keluarga', 'Sahabat', 'VIP', 'Rekan Kerja', 'Tetangga', 'Umum'].includes(cat)
-            ? cat
-            : 'Sahabat',
-          session: 'Resepsi',
-          status: 'pending',
-        });
-      }
-    });
-
-    if (newItems.length > 0) {
-      onUpdateGuests([...newItems, ...guests]);
-      setBulkText('');
-      setIsBulkOpen(false);
-      onShowToast(`Berhasil menambahkan ${newItems.length} tamu sekaligus! 🚀`);
-    } else {
-      onShowToast('Format teks tidak valid. Silakan gunakan format: Nama, Nomor HP');
-    }
-  };
-
-  // Load sample bulk text
-  const handleLoadSampleBulk = () => {
-    setBulkText(
-      `Bpk. Dr. H. Faisal Anwar, 081234567890, VIP\nIbu Hj. Siti Nurjanah, 085712345678, Keluarga\nBudi Santoso & Keluarga, 081987654321, Sahabat\nDimas Prasetyo, S.Kom., 081398765432, Rekan Kerja\nAnisa Rahmawati, 087812345678, Sahabat`
-    );
   };
 
   // Blast single guest via WhatsApp
@@ -344,14 +292,32 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
           </div>
 
           {/* Quick Action Buttons */}
-          <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => {
+                downloadGuestCsvTemplate();
+                onShowToast('Template CSV tamu berhasil diunduh! 📄');
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-[#f9f0e0] text-[#2b2620] text-[12px] font-bold border border-[#4a4238] shadow-[1px_2px_0px_#4a4238] active:translate-y-0.5 transition-all cursor-pointer"
+              title="Unduh file format CSV untuk diisi di Excel"
+            >
+              <Download className="w-4 h-4 text-[#51582f]" />
+              <span className="hidden sm:inline">Unduh Template CSV</span>
+              <span className="sm:hidden">Template CSV</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setIsBulkOpen(!isBulkOpen)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#f9f0e0] hover:bg-[#edd9bf] text-[#2b2620] text-[12px] font-bold border border-[#4a4238] shadow-[2px_2px_0px_#4a4238] active:translate-y-0.5 transition-all cursor-pointer"
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[12px] font-bold border border-[#4a4238] shadow-[2px_2px_0px_#4a4238] active:translate-y-0.5 transition-all cursor-pointer ${
+                isBulkOpen
+                  ? 'bg-[#cc3a63] text-white'
+                  : 'bg-[#f9f0e0] hover:bg-[#edd9bf] text-[#2b2620]'
+              }`}
             >
-              <FileSpreadsheet className="w-4 h-4 text-[#cc3a63]" />
-              <span>{isBulkOpen ? 'Tutup Import' : 'Import Banyak Tamu'}</span>
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>{isBulkOpen ? 'Tutup Import' : 'Upload / Import CSV'}</span>
             </button>
           </div>
         </div>
@@ -444,58 +410,16 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
         </div>
       )}
 
-      {/* 3. Bulk Import Drawer / Collapsible Form */}
-      {isBulkOpen && (
-        <div className="rounded-2xl bg-white p-5 border-2 border-[#4a4238] shadow-[3px_4px_0px_#4a4238]">
-          <div className="flex items-center justify-between pb-3 border-b border-[#e6dac5]">
-            <div className="flex items-center gap-2">
-              <FileSpreadsheet className="w-5 h-5 text-[#cc3a63]" />
-              <h3 className="text-[16px] font-bold text-[#2b2620] font-heading">
-                Import Banyak Tamu Sekaligus (Batch / CSV)
-              </h3>
-            </div>
-            <button
-              type="button"
-              onClick={handleLoadSampleBulk}
-              className="text-[11px] font-bold text-[#cc3a63] hover:underline cursor-pointer"
-            >
-              + Muat Contoh Format
-            </button>
-          </div>
-
-          <p className="text-[12px] text-[#7a7065] mt-2">
-            Salin dan tempel daftar nama tamu dari Excel, spreadsheet, atau catatan. Format tiap baris:{' '}
-            <code className="bg-[#f9f0e0] px-1 rounded text-[#2b2620] font-mono">
-              Nama Tamu, Nomor WhatsApp, Kategori
-            </code>
-          </p>
-
-          <textarea
-            rows={5}
-            value={bulkText}
-            onChange={(e) => setBulkText(e.target.value)}
-            placeholder="Contoh:&#10;Budi Santoso & Istri, 081234567890, VIP&#10;Dimas Setiawan, 085712345678, Sahabat&#10;Keluarga Bpk. Hendra, 081987654321, Keluarga"
-            className="w-full mt-2.5 p-3 rounded-xl border border-[#4a4238] bg-[#fdfaf5] text-[13px] font-mono focus:outline-none focus:ring-2 focus:ring-[#cc3a63]"
-          />
-
-          <div className="flex items-center justify-end gap-2 mt-3">
-            <button
-              type="button"
-              onClick={() => setIsBulkOpen(false)}
-              className="px-3 py-1.5 rounded-lg border border-[#4a4238] text-[12px] font-bold text-[#2b2620] hover:bg-[#f9f0e0]"
-            >
-              Batal
-            </button>
-            <button
-              type="button"
-              onClick={handleBulkImport}
-              className="px-4 py-1.5 rounded-lg bg-[#cc3a63] text-white text-[12px] font-bold shadow-sm hover:bg-[#b52d53] cursor-pointer"
-            >
-              Import ke Antrean Blast
-            </button>
-          </div>
-        </div>
-      )}
+      {/* 3. Bulk CSV / Spreadsheet Import Drawer */}
+      <GuestCsvImporter
+        isOpen={isBulkOpen}
+        onClose={() => setIsBulkOpen(false)}
+        existingGuests={guests}
+        onImport={(newGuests) => {
+          onUpdateGuests([...newGuests, ...guests]);
+        }}
+        onShowToast={onShowToast}
+      />
 
       {/* 4. Two Columns: Template & Live WhatsApp Preview */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -797,8 +721,112 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
           </div>
         </div>
 
-        {/* Table / List */}
-        <div className="overflow-x-auto mt-2 -mx-5 px-5">
+        {/* Mobile View: Clean Touch Cards (sm:hidden) */}
+        <div className="flex flex-col gap-2.5 mt-2 sm:hidden">
+          {filteredGuests.length > 0 ? (
+            filteredGuests.map((g) => {
+              const isSent = g.status === 'sent';
+              const isCopiedMsg = copiedId === `msg-${g.id}`;
+              const isCopiedLnk = copiedId === `link-${g.id}`;
+
+              return (
+                <div
+                  key={g.id}
+                  className="rounded-xl bg-[#fdfaf5] p-3 border border-[#e6dac5] shadow-xs flex flex-col gap-2.5"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="text-[14px] font-bold text-[#2b2620] block">
+                        {g.name}
+                      </span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="font-mono text-[11px] text-[#524348]">
+                          {g.phone || <span className="text-[#a89b91] italic">Tanpa Nomor</span>}
+                        </span>
+                        {g.notes && (
+                          <span className="text-[10px] text-[#7a7065] italic truncate max-w-[140px]">
+                            • {g.notes}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#f9f0e0] text-[#2b2620] border border-[#e6dac5] shrink-0">
+                      {g.category}
+                    </span>
+                  </div>
+
+                  {/* Actions Bar for Mobile */}
+                  <div className="flex items-center gap-2 pt-2 border-t border-[#f0e6d6]">
+                    {/* Status Pill Toggle */}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleStatus(g.id)}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
+                        isSent
+                          ? 'bg-[#f0f3e3] text-[#51582f] border border-[#a2ab73]'
+                          : 'bg-[#fff7eb] text-[#966b2d] border border-[#ecd9be]'
+                      }`}
+                    >
+                      {isSent ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#51582f]" />
+                          <span>Terkirim</span>
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="w-3.5 h-3.5 text-[#966b2d]" />
+                          <span>Belum</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Blast WhatsApp Button */}
+                    <button
+                      type="button"
+                      onClick={() => handleBlastGuest(g)}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#25d366] active:bg-[#20ba5a] text-white text-[12px] font-bold shadow-xs transition-all cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Kirim WA</span>
+                    </button>
+
+                    {/* Copy Link */}
+                    <button
+                      type="button"
+                      onClick={() => handleCopyLink(g)}
+                      className="p-2 rounded-xl bg-white hover:bg-[#f9f0e0] text-[#2b2620] border border-[#e6dac5] cursor-pointer"
+                      title="Salin Tautan"
+                    >
+                      {isCopiedLnk ? (
+                        <Check className="w-4 h-4 text-[#51582f]" />
+                      ) : (
+                        <ExternalLink className="w-4 h-4 text-[#a2ab73]" />
+                      )}
+                    </button>
+
+                    {/* Delete */}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteGuest(g.id, g.name)}
+                      className="p-2 rounded-xl text-[#cc3a63] hover:bg-[#fcecf0] cursor-pointer"
+                      title="Hapus"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="py-6 text-center text-[#7a7065] text-[12px]">
+              Tidak ada data tamu yang cocok dengan pencarian / filter.
+            </div>
+          )}
+        </div>
+
+        {/* Desktop View Table (hidden sm:block) */}
+        <div className="hidden sm:block overflow-x-auto mt-2 -mx-5 px-5">
           <table className="w-full text-left text-[12px] border-collapse min-w-[620px]">
             <thead>
               <tr className="border-b-2 border-[#4a4238] text-[#7a7065] font-bold uppercase text-[10px]">

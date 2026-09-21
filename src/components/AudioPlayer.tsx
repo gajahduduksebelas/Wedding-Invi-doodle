@@ -77,6 +77,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     if (!audio) return;
 
     if (isPlaying) {
+      audio.load();
       const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise
@@ -96,7 +97,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     return () => {
       stopRomanticSynth();
     };
-  }, [isPlaying, onPlaySuccess]);
+  }, [isPlaying, audioUrl, onPlaySuccess]);
 
   return (
     <>
