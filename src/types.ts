@@ -34,6 +34,7 @@ export interface BankAccount {
   bankName: string;
   accountNumber: string;
   holderName: string;
+  accountHolder?: string;
   badgeBg: string;
   badgeText: string;
   btnBg: string;
@@ -44,6 +45,7 @@ export interface VideoConfig {
   sourceType?: 'youtube' | 'upload' | 'direct';
   youtubeUrl: string;
   directVideoUrl?: string;
+  embedUrl?: string;
   videoFileName?: string;
   title: string;
   subtitle: string;
@@ -61,6 +63,22 @@ export interface CouplePerson {
   alt: string;
 }
 
+export interface LoveStoryItem {
+  id: string;
+  stepNumber: number;
+  label: string;
+  title: string;
+  text: string;
+}
+
+export interface LiveStreamConfig {
+  enabled: boolean;
+  platformUrl: string;
+  date: string;
+  time: string;
+  timezone: string;
+}
+
 export interface CoupleData {
   groom: CouplePerson;
   bride: CouplePerson;
@@ -70,6 +88,8 @@ export interface CoupleData {
   audioUrl: string;
   audioFileName?: string;
   audioTitle?: string;
+  loveStory?: LoveStoryItem[];
+  liveStream?: LiveStreamConfig;
 }
 
 export interface WhatsAppGuest {
@@ -91,4 +111,3 @@ export interface AppSettings {
   photos: GalleryPhoto[];
   giftAddress: string;
 }
-

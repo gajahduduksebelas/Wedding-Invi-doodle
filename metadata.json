@@ -1,6 +1,6 @@
 {
-  "name": "Wedding Invitation Theme",
-  "description": "Undangan pernikahan digital Ahmad Fadli & Siti Nurhaliza dengan nuansa whimsical doodle, musik latar, galeri foto, hitung mundur, amplop digital, dan buku tamu RSVP.",
+  "name": "Kirana & Arga — Undangan Pernikahan",
+  "description": "Dengan penuh sukacita kami mengundang Anda pada 2027-02-14.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

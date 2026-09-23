@@ -3,11 +3,15 @@
 @theme {
   --font-epilogue: "Epilogue", sans-serif;
   --font-quicksand: "Quicksand", sans-serif;
+  --font-hand: "Caveat", cursive;
 
   --color-cream: #fff7eb;
   --color-linen: #f9f0e0;
-  --color-sage: #a2ab73;
-  --color-berry: #cc3a63;
+  --color-sage: #8b965f;
+  --color-sage-light: #f0f3e3;
+  --color-coral: #cc3a63;
+  --color-coral-light: #fcecf0;
+  --color-ink: #2b2620;
 }
 
 html {
@@ -25,14 +29,132 @@ h1, h2, h3, h4, .font-heading {
   font-family: var(--font-epilogue);
 }
 
-@keyframes soundwave {
-  0%, 100% { height: 4px; }
-  50% { height: 14px; }
+.font-hand {
+  font-family: var(--font-hand);
 }
 
-.wave-bar-1 { animation: soundwave 1s ease-in-out infinite; }
-.wave-bar-2 { animation: soundwave 0.8s ease-in-out 0.2s infinite; }
-.wave-bar-3 { animation: soundwave 1.1s ease-in-out 0.4s infinite; }
+/* Squiggle underline for cd-heading */
+.cd-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.cd-heading span {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+}
+
+.cd-heading h2 {
+  font-family: var(--font-epilogue);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.cd-heading i {
+  display: block;
+  width: 54px;
+  height: 8px;
+  margin-top: 0.35rem;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.cd-heading-coral span { color: #cc3a63; }
+.cd-heading-coral h2 { color: #2b2620; }
+.cd-heading-coral i {
+  background-image: url("data:image/svg+xml,%3Csvg width='54' height='8' viewBox='0 0 54 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 5C8 2 13 6 18 3C23 1 29 6 35 3C41 1 47 6 52 4' stroke='%23cc3a63' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.cd-heading-sage span { color: #6b7742; }
+.cd-heading-sage h2 { color: #2b2620; }
+.cd-heading-sage i {
+  background-image: url("data:image/svg+xml,%3Csvg width='54' height='8' viewBox='0 0 54 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 5C8 2 13 6 18 3C23 1 29 6 35 3C41 1 47 6 52 4' stroke='%238b965f' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.cd-heading-cream span { color: #e6dac5; }
+.cd-heading-cream h2 { color: #ffffff; }
+.cd-heading-cream i {
+  background-image: url("data:image/svg+xml,%3Csvg width='54' height='8' viewBox='0 0 54 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 5C8 2 13 6 18 3C23 1 29 6 35 3C41 1 47 6 52 4' stroke='%23f9f0e0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* Washi Tape styling */
+.cd-tape-pink {
+  background-color: #f8b4c4;
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255, 255, 255, 0.35) 5px, rgba(255, 255, 255, 0.35) 10px);
+  border: 1px dashed rgba(204, 58, 99, 0.4);
+}
+
+.cd-tape-sage {
+  background-color: #b8c596;
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255, 255, 255, 0.35) 5px, rgba(255, 255, 255, 0.35) 10px);
+  border: 1px dashed rgba(107, 119, 66, 0.4);
+}
+
+/* Floating animation for doodles */
+@keyframes doodleFloat {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-7px) rotate(3deg); }
+}
+
+.animate-doodle-float {
+  animation: doodleFloat 3.8s ease-in-out infinite;
+}
+
+@keyframes doodleFloatSlow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-9px) rotate(-3deg); }
+}
+
+.animate-doodle-slow {
+  animation: doodleFloatSlow 4.8s ease-in-out infinite;
+}
+
+@keyframes doodleBob {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-5px) scale(1.04); }
+}
+
+.animate-doodle-bob {
+  animation: doodleBob 3.2s ease-in-out infinite;
+}
+
+@keyframes doodleSway {
+  0%, 100% { transform: rotate(-4deg) translateY(0); }
+  50% { transform: rotate(4deg) translateY(-6px); }
+}
+
+.animate-doodle-sway {
+  animation: doodleSway 5s ease-in-out infinite;
+}
+
+@keyframes doodlePulseSoft {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+
+.animate-doodle-pulse {
+  animation: doodlePulseSoft 2.8s ease-in-out infinite;
+}
+
+/* Spin slow for music disc */
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spinSlow 8s linear infinite;
+}
 
 /* Hide scrollbars for clean scrapbook presentation */
 ::-webkit-scrollbar {

@@ -236,7 +236,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
                   Pilihan Contoh Video Prewedding
                 </label>
                 <div className="flex flex-col gap-1.5">
-                  {PRESET_VIDEOS.map((p) => (
+                  {PRESET_VIDEOS.map((p: { label: string; url: string }) => (
                     <button
                       key={p.url}
                       type="button"

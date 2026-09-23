@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Play, Pause } from 'lucide-react';
 
 interface AudioPlayerProps {
   audioUrl: string;
   isPlaying: boolean;
   onToggle: () => void;
   onPlaySuccess?: () => void;
+  visibleButton?: boolean;
 }
 
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({
@@ -13,16 +13,21 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   isPlaying,
   onToggle,
   onPlaySuccess,
+  visibleButton = true,
 }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [audioError, setAudioError] = useState(false);
+
+  // Fallback acoustic chime melody synthesizer if network audio fails to load
   const audioCtxRef = useRef<AudioContext | null>(null);
   const synthIntervalRef = useRef<number | null>(null);
 
-  // Fallback romantic chime melody generator using Web Audio API
   const startRomanticSynth = () => {
     if (synthIntervalRef.current) return;
     try {
-      const AudioCtxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioCtxClass =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!audioCtxRef.current) {
         audioCtxRef.current = new AudioCtxClass();
       }
@@ -30,8 +35,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         audioCtxRef.current.resume();
       }
 
-      // Romantic acoustic chord progression frequencies: D Major / B Minor
-      const notes = [293.66, 369.99, 440.0, 587.33, 659.25, 739.99, 880.0, 587.33, 440.0, 369.99];
+      const notes = [293.66, 369.99, 440.0, 587.33, 659.25, 739.99, 880.0, 587.33];
       let noteIdx = 0;
 
       synthIntervalRef.current = window.setInterval(() => {
@@ -46,20 +50,16 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           noteIdx++;
 
           gain.gain.setValueAtTime(0, ctx.currentTime);
-          gain.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 0.05);
+          gain.gain.linearRampToValueAtTime(0.05, ctx.currentTime + 0.05);
           gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.2);
 
           osc.connect(gain);
           gain.connect(ctx.destination);
           osc.start();
           osc.stop(ctx.currentTime + 1.25);
-        } catch {
-          // Ignore synth glitch
-        }
-      }, 700);
-    } catch {
-      // Audio context not allowed
-    }
+        } catch {}
+      }, 750);
+    } catch {}
   };
 
   const stopRomanticSynth = () => {
@@ -68,7 +68,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       synthIntervalRef.current = null;
     }
     if (audioCtxRef.current && audioCtxRef.current.state === 'running') {
-      audioCtxRef.current.suspend().catch(() => {});
+      try {
+        audioCtxRef.current.suspend();
+      } catch {}
     }
   };
 
@@ -77,63 +79,81 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     if (!audio) return;
 
     if (isPlaying) {
-      audio.load();
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            onPlaySuccess?.();
-          })
-          .catch(() => {
-            // If browser blocks audio URL, fallback to Web Audio
-            startRomanticSynth();
-          });
-      }
+      audio
+        .play()
+        .then(() => {
+          setAudioError(false);
+          onPlaySuccess?.();
+        })
+        .catch(() => {
+          // If mp3 blocked or failed, run gentle chime synth
+          setAudioError(true);
+          startRomanticSynth();
+        });
     } else {
       audio.pause();
       stopRomanticSynth();
     }
+  }, [isPlaying]);
 
+  useEffect(() => {
     return () => {
       stopRomanticSynth();
     };
-  }, [isPlaying, audioUrl, onPlaySuccess]);
+  }, []);
 
   return (
     <>
-      <audio ref={audioRef} src={audioUrl} loop preload="auto" />
-      <div className="fixed bottom-20 right-4 z-40">
+      <audio
+        ref={audioRef}
+        src={audioUrl || 'https://dev.janjiharmoni.id/themes/cute-doodle/music.mp3'}
+        loop
+        preload="metadata"
+        onError={() => setAudioError(true)}
+      />
+
+      {/* Cute-Doodle Floating Music Toggle Button */}
+      {visibleButton && (
         <button
-          id="audioToggleBtn"
+          type="button"
           onClick={onToggle}
-          aria-label="Putar atau jeda musik latar"
-          className={`flex items-center gap-2 px-3 py-2 rounded-full shadow-[3px_4px_0px_#4a4238] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_#4a4238] transition-all border border-[#4a4238] cursor-pointer ${
+          aria-label={isPlaying ? 'Hentikan musik' : 'Putar musik'}
+          aria-pressed={isPlaying}
+          className={`fixed top-4 right-4 z-40 w-11 h-11 rounded-full border-2 border-[#4a4238] flex items-center justify-center shadow-[2px_3px_0px_#4a4238] transition-all cursor-pointer ${
             isPlaying
-              ? 'bg-[#fff7eb] text-[#cc3a63]'
-              : 'bg-white text-[#524348]'
+              ? 'bg-[#cc3a63] text-white animate-spin-slow'
+              : 'bg-white text-[#2b2620] hover:bg-[#f9f0e0]'
           }`}
         >
-          <div className="relative flex items-center justify-center w-6 h-6">
-            {isPlaying ? (
-              <Pause className="w-5 h-5 text-[#cc3a63] animate-pulse" />
-            ) : (
-              <Play className="w-5 h-5 text-[#7a7065] fill-current" />
-            )}
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[12px] font-bold text-[#2b2620]">
-              {isPlaying ? 'Jeda Musik' : 'Putar Musik'}
-            </span>
-            {isPlaying && (
-              <div className="flex items-end gap-0.5 h-3.5 w-3" id="soundWavesVisual">
-                <span className="w-0.5 bg-[#cc3a63] rounded-full wave-bar-1 h-3" />
-                <span className="w-0.5 bg-[#cc3a63] rounded-full wave-bar-2 h-2" />
-                <span className="w-0.5 bg-[#cc3a63] rounded-full wave-bar-3 h-3.5" />
-              </div>
-            )}
-          </div>
+          <span className="w-5 h-5 flex items-center justify-center" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
+              <path
+                d="M9.5 7.7 17 5.8v7.15M9.5 7.7v7.15"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <ellipse
+                cx="7.3"
+                cy="15.5"
+                rx="2.4"
+                ry="1.75"
+                transform="rotate(-18 7.3 15.5)"
+                fill="currentColor"
+              />
+              <ellipse
+                cx="14.8"
+                cy="13.6"
+                rx="2.4"
+                ry="1.75"
+                transform="rotate(-18 14.8 13.6)"
+                fill="currentColor"
+              />
+            </svg>
+          </span>
         </button>
-      </div>
+      )}
     </>
   );
 };

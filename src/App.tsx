@@ -4,8 +4,9 @@ import { AnnouncementSection } from './components/AnnouncementSection';
 import { QuoteSection } from './components/QuoteSection';
 import { CoupleSection } from './components/CoupleSection';
 import { CountdownAndEvents } from './components/CountdownAndEvents';
-import { VideoSection } from './components/VideoSection';
+import { LoveStorySection } from './components/LoveStorySection';
 import { GallerySection } from './components/GallerySection';
+import { LiveStreamSection } from './components/LiveStreamSection';
 import { GiftSection } from './components/GiftSection';
 import { RsvpSection } from './components/RsvpSection';
 import { ClosingSection } from './components/ClosingSection';
@@ -39,7 +40,14 @@ export default function App() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const page = params.get('page') || params.get('view');
-      if (page === 'cms' || window.location.hash === '#cms') {
+      const hash = window.location.hash.toLowerCase();
+      const path = window.location.pathname.toLowerCase();
+      if (
+        page === 'cms' ||
+        params.has('cms') ||
+        hash === '#cms' ||
+        path.endsWith('/cms')
+      ) {
         return 'cms';
       }
     }
@@ -47,6 +55,7 @@ export default function App() {
   });
 
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isOpened, setIsOpened] = useState(false);
   const [activeTab, setActiveTab] = useState('invite');
   const [toast, setToast] = useState<{
     message: string;
@@ -240,19 +249,17 @@ export default function App() {
   };
 
   const handleOpenInvitation = () => {
+    setIsOpened(true);
     if (!isPlaying) {
       setIsPlaying(true);
       showToast('🎵 Memutar Musik', 'music');
     }
-    const announcementElement = document.getElementById('announcementSection');
-    if (announcementElement) {
-      announcementElement.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      const quoteElement = document.getElementById('quoteSection');
-      if (quoteElement) {
-        quoteElement.scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => {
+      const homeElement = document.getElementById('home');
+      if (homeElement) {
+        homeElement.scrollIntoView({ behavior: 'smooth' });
       }
-    }
+    }, 150);
   };
 
   const handleAddWish = (newWish: Wish) => {
@@ -264,19 +271,31 @@ export default function App() {
     if (currentView !== 'invitation') return;
 
     const handleScroll = () => {
-      const scrollPos = window.scrollY + 200;
-      const rsvp = document.getElementById('rsvpSection');
-      const gift = document.getElementById('giftSection');
-      const schedule = document.getElementById('scheduleSection');
+      const scrollPos = window.scrollY + 250;
+      const gift = document.getElementById('gift');
+      const rsvp = document.getElementById('community') || document.getElementById('rsvp');
+      const gallery = document.getElementById('gallery');
+      const story = document.getElementById('story');
+      const acara = document.getElementById('acara') || document.getElementById('save-date');
+      const mempelai = document.getElementById('mempelai');
+      const home = document.getElementById('home');
 
-      if (rsvp && scrollPos >= rsvp.offsetTop) {
-        setActiveTab('doodles');
-      } else if (gift && scrollPos >= gift.offsetTop) {
-        setActiveTab('registry');
-      } else if (schedule && scrollPos >= schedule.offsetTop) {
-        setActiveTab('schedule');
+      if (gift && scrollPos >= gift.offsetTop) {
+        setActiveTab('gift');
+      } else if (rsvp && scrollPos >= rsvp.offsetTop) {
+        setActiveTab('rsvp');
+      } else if (gallery && scrollPos >= gallery.offsetTop) {
+        setActiveTab('gallery');
+      } else if (story && scrollPos >= story.offsetTop) {
+        setActiveTab('story');
+      } else if (acara && scrollPos >= acara.offsetTop) {
+        setActiveTab('acara');
+      } else if (mempelai && scrollPos >= mempelai.offsetTop) {
+        setActiveTab('mempelai');
+      } else if (home && scrollPos >= home.offsetTop) {
+        setActiveTab('home');
       } else {
-        setActiveTab('invite');
+        setActiveTab('home');
       }
     };
 
@@ -301,6 +320,11 @@ export default function App() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       const url = new URL(window.location.href);
       url.searchParams.delete('page');
+      url.searchParams.delete('view');
+      url.searchParams.delete('cms');
+      if (url.hash.toLowerCase() === '#cms') {
+        url.hash = '';
+      }
       window.history.pushState({}, '', url);
     }
   };
@@ -309,7 +333,14 @@ export default function App() {
   useEffect(() => {
     const handleUrlChange = () => {
       const params = new URLSearchParams(window.location.search);
-      const isCms = params.get('page') === 'cms' || window.location.hash === '#cms';
+      const page = params.get('page') || params.get('view');
+      const hash = window.location.hash.toLowerCase();
+      const path = window.location.pathname.toLowerCase();
+      const isCms =
+        page === 'cms' ||
+        params.has('cms') ||
+        hash === '#cms' ||
+        path.endsWith('/cms');
       setCurrentView(isCms ? 'cms' : 'invitation');
     };
 
@@ -356,7 +387,7 @@ export default function App() {
 
   // Otherwise, render the romantic, doodle-styled wedding invitation for invitees
   return (
-    <div className="min-h-screen bg-[#fff7eb] text-[#2b2620] flex flex-col items-center relative selection:bg-[#fcecf0] selection:text-[#cc3a63]">
+    <div className={`min-h-screen ${isOpened ? 'bg-[#fff7eb]' : 'bg-white'} text-[#2b2620] flex flex-col items-center relative selection:bg-[#fcecf0] selection:text-[#cc3a63]`}>
       {/* Toast Alert */}
       <Toast message={toast.message} isVisible={toast.isVisible} type={toast.type} />
 
@@ -365,65 +396,76 @@ export default function App() {
         audioUrl={couple.audioUrl || COUPLE_DATA.audioUrl}
         isPlaying={isPlaying}
         onToggle={handleToggleMusic}
+        visibleButton={isOpened}
       />
 
-      {/* Main Single Column Container */}
-      <main className="w-full max-w-[460px] flex flex-col pb-20 pt-4 relative">
-        {/* 1. Hero / Unseal Envelope Card */}
+      {/* 1. Interactive Cover Section (Single Full Mobile Page Gate) */}
+      <div className="w-full min-h-dvh flex items-center justify-center bg-white overflow-hidden">
         <HeroSection
           guestName={guestName}
           onUpdateGuestName={setGuestName}
           onOpenInvitation={handleOpenInvitation}
           couple={couple}
+          isOpened={isOpened}
         />
+      </div>
 
-        {/* 2. Hand-Drawn Locket Announcement: "WE'RE GETTING MARRIED!" */}
-        <AnnouncementSection
-          onScrollNext={() => {
-            document.getElementById('quoteSection')?.scrollIntoView({ behavior: 'smooth' });
-          }}
-          couple={couple}
-        />
+      {/* Main Single Column Container - revealed when invitation is opened */}
+      {isOpened && (
+        <>
+          <main className="w-full max-w-[460px] flex flex-col pb-20 pt-2 relative">
+            {/* 2. Hand-Drawn Locket Announcement: "KITA AKAN MENIKAH!" */}
+            <AnnouncementSection
+              onScrollNext={() => {
+                document.getElementById('quote')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              couple={couple}
+            />
 
-        {/* 3. Quranic Blessing Greeting */}
-        <QuoteSection />
+            {/* 3. Quranic Blessing Greeting (#quote) */}
+            <QuoteSection />
 
-        {/* 4. The Happy Couple */}
-        <CoupleSection couple={couple} />
+            {/* 4. The Happy Couple (#mempelai) */}
+            <CoupleSection couple={couple} />
 
-        {/* 5. Save The Date & Countdown */}
-        <CountdownAndEvents couple={couple} events={events} />
+            {/* 5. Save The Date & Detail Acara (#save-date, #acara) */}
+            <CountdownAndEvents couple={couple} events={events} />
 
-        {/* 6. Video Section (Before Photo Gallery) */}
-        <VideoSection videoConfig={videoConfig} />
+            {/* 6. Love Story Timeline (#story) */}
+            <LoveStorySection stories={couple.loveStory} />
 
-        {/* 7. Love Story & Photo Gallery */}
-        <GallerySection photos={photos} />
+            {/* 7. Gallery & Video (#gallery) */}
+            <GallerySection photos={photos} videoUrl={videoConfig.embedUrl} />
 
-        {/* 8. Amplop Digital (Wedding Gift) */}
-        <GiftSection
-          onShowToast={showToast}
-          banks={banks}
-          giftAddress={giftAddress}
-        />
+            {/* 8. Live Streaming (#stream) */}
+            <LiveStreamSection config={couple.liveStream} />
 
-        {/* 9. RSVP & Doa Restu */}
-        <RsvpSection
-          wishes={wishes}
-          guestName={guestName}
-          onAddWish={handleAddWish}
-          onShowToast={(msg) => showToast(msg, 'success')}
-        />
+            {/* 9. Amplop Digital & Kado (#gift) */}
+            <GiftSection
+              onShowToast={showToast}
+              banks={banks}
+              giftAddress={giftAddress}
+            />
 
-        {/* 10. Closing Thanks & Footer with discreet CMS link */}
-        <ClosingSection couple={couple} onOpenCms={handleSwitchToCms} />
-      </main>
+            {/* 10. RSVP & Doa Restu (#rsvp, #wishes) */}
+            <RsvpSection
+              wishes={wishes}
+              guestName={guestName}
+              onAddWish={handleAddWish}
+              onShowToast={(msg) => showToast(msg, 'success')}
+            />
 
-      {/* Fixed Bottom Navigation Bar */}
-      <BottomNavigation
-        activeTab={activeTab}
-        onTabChange={(tabId) => setActiveTab(tabId)}
-      />
+            {/* 11. Closing Thanks & Footer (#closing, #footer) */}
+            <ClosingSection couple={couple} />
+          </main>
+
+          {/* Fixed Bottom Navigation Bar */}
+          <BottomNavigation
+            activeTab={activeTab}
+            onTabChange={(tabId) => setActiveTab(tabId)}
+          />
+        </>
+      )}
     </div>
   );
 }
