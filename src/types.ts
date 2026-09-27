@@ -92,6 +92,23 @@ export interface CoupleData {
   liveStream?: LiveStreamConfig;
 }
 
+export interface DressCodeColor {
+  id: string;
+  name: string;
+  hex: string;
+}
+
+export interface DressCodeConfig {
+  enabled: boolean;
+  /** Outfit style, e.g. "Semi Formal · Batik / Kebaya Modern". */
+  attire: string;
+  description: string;
+  colors: DressCodeColor[];
+  /** Colors guests are asked not to wear (e.g. white, reserved for the bride). */
+  avoidColors: DressCodeColor[];
+  notes: string[];
+}
+
 export interface WhatsAppGuest {
   id: string;
   name: string;

@@ -18,6 +18,7 @@ import {
   KeyRound,
   LogOut,
   Lock,
+  Shirt,
   Save,
   Loader2,
   AlertTriangle,
@@ -31,6 +32,7 @@ import {
   Wish,
   WhatsAppGuest,
   SaveStatus,
+  DressCodeConfig,
 } from '../../types';
 import { WhatsappBlaster } from './WhatsappBlaster';
 import { CoupleEventEditor } from './CoupleEventEditor';
@@ -39,9 +41,10 @@ import { GiftsEditor } from './GiftsEditor';
 import { GalleryEditor } from './GalleryEditor';
 import { RsvpManager } from './RsvpManager';
 import { PasswordManager } from './PasswordManager';
+import { DressCodeEditor } from './DressCodeEditor';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 
-type CmsTabId = 'wa-blaster' | 'couple-event' | 'gallery' | 'video' | 'gifts' | 'rsvp' | 'password';
+type CmsTabId = 'wa-blaster' | 'couple-event' | 'dresscode' | 'gallery' | 'video' | 'gifts' | 'rsvp' | 'password';
 
 interface TabItem {
   id: CmsTabId;
@@ -60,12 +63,14 @@ interface CmsDashboardProps {
   banks: BankAccount[];
   photos: GalleryPhoto[];
   giftAddress: string;
+  dressCode: DressCodeConfig;
   wishes: Wish[];
   waGuests: WhatsAppGuest[];
   onSaveCoupleAndEvents: (newCouple: CoupleData, newEvents: EventDetail[]) => void;
   onSaveVideoConfig: (newConfig: VideoConfig) => void;
   onSaveBanksAndAddress: (newBanks: BankAccount[], newAddress: string) => void;
   onSavePhotos: (newPhotos: GalleryPhoto[]) => void;
+  onSaveDressCode: (config: DressCodeConfig) => void;
   onUpdateWishes: (newWishes: Wish[]) => void;
   onUpdateWaGuests: (newGuests: WhatsAppGuest[]) => void;
   onSwitchToInvitation: () => void;
@@ -76,10 +81,11 @@ interface CmsDashboardProps {
 }
 
 // Tabs whose editors keep a local draft until saved.
-type DraftTabId = 'couple-event' | 'gallery' | 'video' | 'gifts';
+type DraftTabId = 'couple-event' | 'dresscode' | 'gallery' | 'video' | 'gifts';
 
 const DRAFT_TAB_LABELS: Record<DraftTabId, string> = {
   'couple-event': 'Mempelai & Acara',
+  dresscode: 'Dress Code',
   gallery: 'Galeri',
   video: 'Video',
   gifts: 'Kado',
@@ -92,12 +98,14 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
   banks,
   photos,
   giftAddress,
+  dressCode,
   wishes,
   waGuests,
   onSaveCoupleAndEvents,
   onSaveVideoConfig,
   onSaveBanksAndAddress,
   onSavePhotos,
+  onSaveDressCode,
   onUpdateWishes,
   onUpdateWaGuests,
   onSwitchToInvitation,
@@ -244,6 +252,14 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
       shortLabel: 'Mempelai',
       description: 'Biodata pasangan, tanggal, akad, resepsi & peta lokasi',
       icon: Heart,
+    },
+    {
+      id: 'dresscode',
+      label: 'Dress Code',
+      shortLabel: 'Dress Code',
+      description: 'Gaya busana & palet warna referensi untuk tamu',
+      icon: Shirt,
+      badge: dressCode.enabled ? undefined : 'Nonaktif',
     },
     {
       id: 'gallery',
@@ -597,6 +613,15 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
             onDraftChange={(draft) =>
               setDraft('couple-event', draft && (() => onSaveCoupleAndEvents(draft.couple, draft.events)))
             }
+          />
+        )}
+
+        {activeTab === 'dresscode' && (
+          <DressCodeEditor
+            dressCode={dressCode}
+            onSave={onSaveDressCode}
+            onShowToast={onShowToast}
+            onDraftChange={(draft) => setDraft('dresscode', draft && (() => onSaveDressCode(draft)))}
           />
         )}
 

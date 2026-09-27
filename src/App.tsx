@@ -10,6 +10,7 @@ import { LiveStreamSection } from './components/LiveStreamSection';
 import { GiftSection } from './components/GiftSection';
 import { RsvpSection } from './components/RsvpSection';
 import { ClosingSection } from './components/ClosingSection';
+import { DressCodeSection } from './components/DressCodeSection';
 import { BottomNavigation } from './components/BottomNavigation';
 import { AudioPlayer, startBackgroundMusicFromGesture } from './components/AudioPlayer';
 import { Toast } from './components/Toast';
@@ -23,6 +24,7 @@ import {
   INITIAL_WISHES,
   DEFAULT_VIDEO_CONFIG,
   DEFAULT_GIFT_ADDRESS,
+  DEFAULT_DRESS_CODE,
 } from './data/weddingData';
 import { INITIAL_WA_GUESTS } from './data/whatsappData';
 import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
@@ -37,6 +39,7 @@ import {
   GalleryPhoto,
   WhatsAppGuest,
   SaveStatus,
+  DressCodeConfig,
 } from './types';
 
 export default function App() {
@@ -92,6 +95,9 @@ export default function App() {
     readCache('ahmad_siti_gift_address', DEFAULT_GIFT_ADDRESS, false)
   );
   const [photos, setPhotos] = useState<GalleryPhoto[]>(() => readCache('ahmad_siti_photos', GALLERY_PHOTOS));
+  const [dressCode, setDressCode] = useState<DressCodeConfig>(() =>
+    readCache('ahmad_siti_dress_code', DEFAULT_DRESS_CODE)
+  );
   const [wishes, setWishes] = useState<Wish[]>(() => readCache('ahmad_siti_wishes', INITIAL_WISHES));
   const [waGuests, setWaGuests] = useState<WhatsAppGuest[]>(() =>
     readCache('ahmad_siti_wa_guests', INITIAL_WA_GUESTS)
@@ -195,6 +201,10 @@ export default function App() {
               ? settingsRow.video_config
               : videoConfig,
           gift_address: settingsRow.gift_address || giftAddress,
+          dress_code:
+            settingsRow.dress_code && Object.keys(settingsRow.dress_code).length > 0
+              ? settingsRow.dress_code
+              : dressCode,
         };
         setCouple(loaded.couple);
         setEvents(loaded.events);
@@ -202,6 +212,7 @@ export default function App() {
         setPhotos(loaded.photos);
         setVideoConfig(loaded.video_config);
         setGiftAddress(loaded.gift_address);
+        setDressCode(loaded.dress_code);
         // Only mark as synced when the row actually held real content; an
         // empty seeded row should get populated by the first admin session.
         const rowHasContent = settingsRow.couple && Object.keys(settingsRow.couple).length > 0;
@@ -265,6 +276,7 @@ export default function App() {
     writeCache('ahmad_siti_banks', banks);
     writeCache('ahmad_siti_gift_address', giftAddress);
     writeCache('ahmad_siti_photos', photos);
+    writeCache('ahmad_siti_dress_code', dressCode);
 
     if (!isSupabaseConfigured || !supabase || !isDataReady || !isCmsAuthenticated) return;
 
@@ -275,6 +287,7 @@ export default function App() {
       photos,
       video_config: videoConfig,
       gift_address: giftAddress,
+      dress_code: dressCode,
     };
     if (JSON.stringify(settings) === lastSyncedSettingsRef.current) {
       // An edit that was undone before its save ran is already in sync.
@@ -306,6 +319,7 @@ export default function App() {
         setPhotos(toSave.photos);
         setVideoConfig(toSave.video_config);
         setGiftAddress(toSave.gift_address);
+        setDressCode(toSave.dress_code);
         return;
       }
 
@@ -328,7 +342,7 @@ export default function App() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [couple, events, videoConfig, banks, giftAddress, photos, isDataReady, isCmsAuthenticated, saveRequest]);
+  }, [couple, events, videoConfig, banks, giftAddress, photos, dressCode, isDataReady, isCmsAuthenticated, saveRequest]);
 
   // Wishes and wa_guests are NOT written here — they live in their own
   // Supabase tables and are written directly at the point of change
@@ -621,6 +635,7 @@ export default function App() {
           banks={banks}
           photos={photos}
           giftAddress={giftAddress}
+          dressCode={dressCode}
           wishes={wishes}
           waGuests={waGuests}
           onSaveCoupleAndEvents={(newCouple, newEvents) => {
@@ -633,6 +648,7 @@ export default function App() {
             setGiftAddress(newAddress);
           }}
           onSavePhotos={(newPhotos) => setPhotos(newPhotos)}
+          onSaveDressCode={(newDressCode) => setDressCode(newDressCode)}
           onUpdateWishes={handleUpdateWishes}
           onUpdateWaGuests={handleUpdateWaGuests}
           onSwitchToInvitation={handleSwitchToInvitation}
@@ -696,6 +712,9 @@ export default function App() {
 
             {/* 5. Save The Date & Detail Acara (#save-date, #acara) */}
             <CountdownAndEvents couple={couple} events={events} />
+
+            {/* 5b. Dress Code (#dresscode) — hidden when turned off in the CMS */}
+            {dressCode.enabled && <DressCodeSection config={dressCode} />}
 
             {/* 6. Love Story Timeline (#story) */}
             <LoveStorySection stories={couple.loveStory} />
