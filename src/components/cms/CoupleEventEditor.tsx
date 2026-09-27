@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, Calendar, Clock, MapPin, Music, Sparkles, Save, RotateCcw, Upload, Crop } from 'lucide-react';
+import { Heart, Calendar, Clock, MapPin, Music, Sparkles, Save, RotateCcw, Upload, Crop, Video, Eye, EyeOff } from 'lucide-react';
 import { CoupleData, EventDetail } from '../../types';
 import { COUPLE_DATA, EVENTS_DATA } from '../../data/weddingData';
 import { ImageCropperModal } from './ImageCropperModal';
@@ -42,6 +42,27 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
       }));
       onShowToast('Foto mempelai wanita berhasil diupdate & dipotong! 👰');
     }
+  };
+
+  const isLiveEnabled = formData.liveStream?.enabled !== false;
+
+  const handleToggleLiveStream = () => {
+    const nextState = !isLiveEnabled;
+    setFormData((prev) => ({
+      ...prev,
+      liveStream: {
+        enabled: nextState,
+        platformUrl: prev.liveStream?.platformUrl || 'https://youtube.com/live/argakirana',
+        date: prev.liveStream?.date || prev.weddingDate || 'Minggu, 14 Februari 2027',
+        time: prev.liveStream?.time || '09:00',
+        timezone: prev.liveStream?.timezone || 'WIB',
+      },
+    }));
+    onShowToast(
+      nextState
+        ? '🟢 Bagian Live Streaming diaktifkan!'
+        : '⚪ Bagian Live Streaming dinonaktifkan (disembunyikan).'
+    );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -410,6 +431,183 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
         }
         onShowToast={onShowToast}
       />
+
+      {/* Live Streaming (Virtual Wedding) Settings & Toggle */}
+      <div className="rounded-2xl bg-white p-5 border-2 border-[#4a4238] shadow-[3px_4px_0px_#4a4238] flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e6dac5]">
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-9 h-9 rounded-full flex items-center justify-center border transition-colors ${
+                isLiveEnabled
+                  ? 'bg-[#F7ECEF] text-[#6E1A2D] border-[#E5C2CB]'
+                  : 'bg-gray-100 text-gray-400 border-gray-300'
+              }`}
+            >
+              <Video className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-[16px] font-bold text-[#2b2620] font-heading">
+                  Siaran Langsung (Virtual Wedding)
+                </h3>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider ${
+                    isLiveEnabled
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                      : 'bg-gray-100 text-gray-500 border-gray-300'
+                  }`}
+                >
+                  {isLiveEnabled ? '● Aktif' : '○ Nonaktif'}
+                </span>
+              </div>
+              <p className="text-[12px] text-[#7a7065] mt-0.5">
+                Pengaturan bagian Virtual Wedding untuk tamu yang berhalangan hadir secara fisik.
+              </p>
+            </div>
+          </div>
+
+          {/* Toggle Switch */}
+          <button
+            type="button"
+            onClick={handleToggleLiveStream}
+            className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[12px] font-bold border transition-all cursor-pointer shadow-xs active:translate-y-0.5 ${
+              isLiveEnabled
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700'
+                : 'bg-[#f0f0f0] hover:bg-[#e4e4e4] text-[#4a4238] border-[#a0988e]'
+            }`}
+          >
+            {isLiveEnabled ? (
+              <>
+                <Eye className="w-4 h-4" />
+                <span>Live Streaming: AKTIF</span>
+              </>
+            ) : (
+              <>
+                <EyeOff className="w-4 h-4" />
+                <span>Live Streaming: NONAKTIF</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* When Live Stream is enabled */}
+        {isLiveEnabled ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="text-[11px] font-bold text-[#7a7065] block uppercase">
+                Tautan / URL Live Streaming (YouTube Live, Zoom, Instagram Live, Meet, dll.)
+              </label>
+              <input
+                type="url"
+                value={formData.liveStream?.platformUrl || ''}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    liveStream: {
+                      enabled: true,
+                      platformUrl: e.target.value,
+                      date: prev.liveStream?.date || prev.weddingDate || 'Minggu, 14 Februari 2027',
+                      time: prev.liveStream?.time || '09:00',
+                      timezone: prev.liveStream?.timezone || 'WIB',
+                    },
+                  }))
+                }
+                placeholder="https://youtube.com/live/... atau https://instagram.com/..."
+                className="w-full mt-1 px-3 py-2.5 rounded-xl border border-[#4a4238] bg-[#fdfaf5] text-[13px] font-mono text-[#2b2620] focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-bold text-[#7a7065] block uppercase">
+                Tanggal Siaran
+              </label>
+              <input
+                type="text"
+                value={formData.liveStream?.date || formData.weddingDate || 'Minggu, 14 Februari 2027'}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    liveStream: {
+                      enabled: true,
+                      platformUrl: prev.liveStream?.platformUrl || '',
+                      date: e.target.value,
+                      time: prev.liveStream?.time || '09:00',
+                      timezone: prev.liveStream?.timezone || 'WIB',
+                    },
+                  }))
+                }
+                className="w-full mt-1 px-3 py-2 rounded-xl border border-[#4a4238] bg-[#fdfaf5] text-[12px] font-semibold text-[#2b2620] focus:outline-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] font-bold text-[#7a7065] block uppercase">
+                  Waktu Mulai
+                </label>
+                <input
+                  type="text"
+                  value={formData.liveStream?.time || '09:00'}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      liveStream: {
+                        enabled: true,
+                        platformUrl: prev.liveStream?.platformUrl || '',
+                        date: prev.liveStream?.date || prev.weddingDate || 'Minggu, 14 Februari 2027',
+                        time: e.target.value,
+                        timezone: prev.liveStream?.timezone || 'WIB',
+                      },
+                    }))
+                  }
+                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[#4a4238] bg-[#fdfaf5] text-[12px] font-semibold text-[#2b2620] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-[#7a7065] block uppercase">
+                  Zona Waktu
+                </label>
+                <select
+                  value={formData.liveStream?.timezone || 'WIB'}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      liveStream: {
+                        enabled: true,
+                        platformUrl: prev.liveStream?.platformUrl || '',
+                        date: prev.liveStream?.date || prev.weddingDate || 'Minggu, 14 Februari 2027',
+                        time: prev.liveStream?.time || '09:00',
+                        timezone: e.target.value,
+                      },
+                    }))
+                  }
+                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[#4a4238] bg-[#fdfaf5] text-[12px] font-semibold text-[#2b2620] focus:outline-none"
+                >
+                  <option value="WIB">WIB</option>
+                  <option value="WITA">WITA</option>
+                  <option value="WIT">WIT</option>
+                  <option value="GMT+7">GMT+7</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="md:col-span-2 p-3 rounded-xl bg-[#f0f3e3] border border-[#a2ab73] flex items-center justify-between text-[11.5px] text-[#51582f]">
+              <span>Bagian Live Streaming akan ditampilkan di website undangan tamu.</span>
+            </div>
+          </div>
+        ) : (
+          <div className="p-5 rounded-xl bg-gray-50 border border-gray-200 text-center flex flex-col items-center justify-center">
+            <EyeOff className="w-8 h-8 text-gray-400 mb-1.5" />
+            <p className="text-[13px] font-bold text-gray-700">
+              Bagian Live Streaming Sedang Dimatikan
+            </p>
+            <p className="text-[11.5px] text-gray-500 max-w-[400px] mt-0.5">
+              Bagian siaran langsung disembunyikan dan tidak akan muncul di website undangan tamu.
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Events: Akad & Resepsi */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

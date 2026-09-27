@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
-import { Mail, Music, Edit3, Check, Heart, Sparkles } from 'lucide-react';
+import { Mail, Music, Edit3, Check } from 'lucide-react';
 import { CoupleData } from '../types';
+import {
+  DoodleFlyingBird,
+  DoodleHeartBalloons,
+  DoodleDiamondRing,
+  DoodleGiftBox,
+} from './DoodleIcons';
 import { DOODLE_ASSETS } from '../data/weddingData';
 
 interface HeroSectionProps {
@@ -36,152 +42,60 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   return (
     <section
       id="heroSection"
-      className={`w-full bg-white relative flex flex-col items-center justify-center overflow-hidden transition-all duration-700 ${
-        isOpened
-          ? 'min-h-[92vh] py-8'
-          : 'min-h-dvh h-dvh py-3 px-3.5'
+      aria-label="Cover Undangan"
+      className={`w-full bg-[#FAF7EE] relative flex flex-col items-center justify-center overflow-hidden transition-all duration-700 select-none ${
+        isOpened ? 'min-h-[90vh] py-8' : 'min-h-dvh h-dvh py-3 px-3.5'
       }`}
     >
-      {/* ============================================================ */}
-      {/* FLOATING DOODLE ASSETS IN FRONT OF BLANK WHITE BACKGROUND    */}
-      {/* ============================================================ */}
-
-      {/* 1. Top-Left: Love Birds holding ribbon */}
-      <div className="absolute top-2 sm:top-5 left-2 sm:left-6 z-20 pointer-events-none animate-doodle-float">
-        <img
-          src={DOODLE_ASSETS.loveBirds}
-          alt=""
-          aria-hidden="true"
-          className="w-16 sm:w-20 h-16 sm:h-20 object-contain drop-shadow-[2px_3px_0px_rgba(74,66,56,0.12)]"
-        />
+      {/* Decorative Doodles in Background */}
+      <div className="absolute top-3 left-3 z-10 pointer-events-none">
+        <DoodleFlyingBird className="w-16 sm:w-20 h-auto" />
+      </div>
+      <div className="absolute top-4 right-3 z-10 pointer-events-none">
+        <DoodleHeartBalloons className="w-14 sm:w-18 h-auto" />
+      </div>
+      <div className="absolute bottom-4 left-3 z-10 pointer-events-none opacity-85">
+        <DoodleDiamondRing className="w-14 sm:w-16 h-auto" />
+      </div>
+      <div className="absolute bottom-4 right-3 z-10 pointer-events-none opacity-85">
+        <DoodleGiftBox className="w-14 sm:w-16 h-auto" />
       </div>
 
-      {/* 2. Top-Right: Heart Balloons Bouquet */}
-      <div className="absolute top-3 sm:top-5 right-2 sm:right-6 z-20 pointer-events-none animate-doodle-slow">
-        <img
-          src={DOODLE_ASSETS.heartBalloons}
-          alt=""
-          aria-hidden="true"
-          className="w-16 sm:w-22 h-16 sm:h-22 object-contain drop-shadow-[2px_3px_0px_rgba(74,66,56,0.12)]"
-        />
-      </div>
-
-      {/* 3. Middle-Left: Golden Wedding Rings Doodle */}
-      <div className="hidden xs:block absolute top-[28%] left-1 sm:left-4 z-20 pointer-events-none animate-doodle-sway">
-        <img
-          src={DOODLE_ASSETS.rings}
-          alt=""
-          aria-hidden="true"
-          className="w-11 sm:w-14 h-11 sm:h-14 object-contain -rotate-12 drop-shadow-[1px_2px_0px_rgba(74,66,56,0.1)]"
-        />
-      </div>
-
-      {/* 4. Middle-Right: Flying Love Envelopes */}
-      <div className="hidden xs:block absolute top-[30%] right-1 sm:right-4 z-20 pointer-events-none animate-doodle-bob">
-        <img
-          src={DOODLE_ASSETS.envelopes}
-          alt=""
-          aria-hidden="true"
-          className="w-12 sm:w-15 h-12 sm:h-15 object-contain rotate-12 drop-shadow-[1px_2px_0px_rgba(74,66,56,0.1)]"
-        />
-      </div>
-
-      {/* 5. Bottom-Left: Bridal Flower Bouquet */}
-      <div className="absolute bottom-3 sm:bottom-6 left-2 sm:left-6 z-20 pointer-events-none animate-doodle-bob">
-        <img
-          src={DOODLE_ASSETS.bouquet}
-          alt=""
-          aria-hidden="true"
-          className="w-14 sm:w-18 h-14 sm:h-18 object-contain -rotate-6 drop-shadow-[2px_2px_0px_rgba(74,66,56,0.12)]"
-        />
-      </div>
-
-      {/* 6. Bottom-Right: Cupid's Heart Arrow */}
-      <div className="absolute bottom-3 sm:bottom-6 right-2 sm:right-6 z-20 pointer-events-none animate-doodle-float">
-        <img
-          src={DOODLE_ASSETS.heartArrow}
-          alt=""
-          aria-hidden="true"
-          className="w-14 sm:w-18 h-14 sm:h-18 object-contain rotate-6 drop-shadow-[2px_2px_0px_rgba(74,66,56,0.12)]"
-        />
-      </div>
-
-      {/* 7. Subtle Clinking Champagne Toast in Background Corner */}
-      <div className="hidden sm:block absolute bottom-24 left-10 z-10 pointer-events-none opacity-80 animate-doodle-slow">
-        <img
-          src={DOODLE_ASSETS.toast}
-          alt=""
-          aria-hidden="true"
-          className="w-12 h-12 object-contain"
-        />
-      </div>
-
-      {/* 8. Subtle Wedding Bells in Background Corner */}
-      <div className="hidden sm:block absolute bottom-24 right-10 z-10 pointer-events-none opacity-80 animate-doodle-sway">
-        <img
-          src={DOODLE_ASSETS.bells}
-          alt=""
-          aria-hidden="true"
-          className="w-12 h-12 object-contain"
-        />
-      </div>
-
-      {/* Scattered Whimsical Hand-Drawn Doodle SVG Accents */}
-      <div className="absolute top-[18%] left-[18%] text-[#f8b4c4] pointer-events-none animate-doodle-pulse">
-        <Sparkles className="w-5 h-5" />
-      </div>
-      <div className="absolute top-[16%] right-[20%] text-[#cc3a63] pointer-events-none animate-doodle-pulse">
-        <Heart className="w-4 h-4 fill-[#fcecf0]" />
-      </div>
-      <div className="absolute bottom-[20%] left-[22%] text-[#b8c596] pointer-events-none animate-doodle-pulse">
-        <Sparkles className="w-4 h-4" />
-      </div>
-      <div className="absolute bottom-[18%] right-[22%] text-[#cc3a63] pointer-events-none animate-doodle-pulse">
-        <Heart className="w-4 h-4 fill-[#fcecf0]" />
-      </div>
-
-      {/* ============================================================ */}
-      {/* CENTRAL DOODLE INVITATION CARD (Border-free clean paper card) */}
-      {/* ============================================================ */}
-      <div className="w-full max-w-[390px] rounded-3xl bg-[#fffdf9] p-5 sm:p-6 shadow-[0_12px_40px_rgba(74,66,56,0.08)] relative z-30 flex flex-col items-center text-center my-auto transition-transform duration-300">
-        
-        {/* Washi Tape Decor Top (Signature Cute Doodle look) */}
+      {/* Central Cover Invitation Card */}
+      <div className="w-full max-w-[390px] doodle-card p-6 sm:p-7 relative z-20 flex flex-col items-center text-center my-auto">
+        {/* Pink Washi Tape at Top Center */}
         <div
-          className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-32 h-7 cd-tape-pink -rotate-1 rounded-xs shadow-xs pointer-events-none"
+          className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-32 h-6 cd-tape-pink -rotate-1 rounded-xs pointer-events-none"
           aria-hidden="true"
         />
 
-        {/* Header Eyebrow */}
-        <div className="flex items-center justify-center gap-1.5 mt-1 text-[#cc3a63]">
-          <Heart className="w-3 h-3 fill-[#cc3a63]" />
-          <span className="text-[11px] sm:text-[12px] font-bold tracking-widest uppercase font-heading">
-            Undangan Pernikahan
-          </span>
-          <Heart className="w-3 h-3 fill-[#cc3a63]" />
-        </div>
+        {/* Eyebrow in Allura */}
+        <span className="font-allura text-[26px] sm:text-[28px] text-[#B4533C] leading-none mt-1">
+          Undangan Pernikahan
+        </span>
 
-        {/* Couple Big Callout Heading */}
-        <h1 className="text-[30px] sm:text-[36px] font-black text-[#2b2620] tracking-tight leading-[1.1] mt-1.5 font-heading">
+        {/* Big Couple Callout in Delicious Handrawn */}
+        <h1 className="font-delicious text-[38px] sm:text-[44px] text-[#181818] tracking-wide uppercase leading-tight mt-1">
           {groomNickname} &amp; {brideNickname}
         </h1>
 
         {/* Date Pill Badge */}
-        <div className="mt-1 px-3.5 py-0.5 rounded-full bg-[#f9f0e0] text-[11.5px] sm:text-[12px] font-bold text-[#7a7065] shadow-xs">
+        <div className="mt-1 px-4 py-1.5 rounded-full bg-[#EFE3C6] border-[1.5px] border-[#181818] shadow-[2.5px_2.5px_0px_#181818] text-[12px] font-bold text-[#181818]">
           {displayDate}
         </div>
 
         {/* Central Floral Envelope Graphic */}
-        <div className="relative my-2 sm:my-3 w-40 sm:w-44 h-32 sm:h-36 flex items-center justify-center">
+        <div className="relative my-3 sm:my-4 w-36 sm:w-40 h-28 sm:h-32 flex items-center justify-center">
           <img
             src={DOODLE_ASSETS.floralEnvelope}
             alt="Amplop Undangan"
-            className="w-full h-full object-contain filter drop-shadow-[0_4px_12px_rgba(74,66,56,0.12)] hover:scale-105 transition-transform"
+            className="w-full h-full object-contain filter drop-shadow-[0_4px_10px_rgba(24,24,24,0.15)]"
           />
         </div>
 
         {/* Guest Recipient Scrapbook Frame */}
-        <div className="w-full rounded-2xl bg-[#f9f0e0]/80 p-3 sm:p-3.5 shadow-xs my-0.5 relative group">
-          <span className="text-[10px] sm:text-[10.5px] font-bold text-[#7a7065] block uppercase tracking-wider">
+        <div className="w-full rounded-2xl bg-[#FAF7EE] border-[2px] border-[#181818] shadow-[2.5px_2.5px_0px_#181818] p-3 sm:p-3.5 my-1 relative">
+          <span className="text-[10px] font-bold text-stone-600 block uppercase tracking-wider">
             Kepada Yth. Bapak/Ibu/Saudara/i:
           </span>
 
@@ -192,19 +106,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 value={tempName}
                 onChange={(e) => setTempName(e.target.value)}
                 autoFocus
-                className="text-[15px] font-bold text-[#2b2620] bg-white px-2.5 py-1 rounded-lg border-2 border-[#cc3a63] text-center focus:outline-none w-full max-w-[240px]"
+                className="text-[14px] font-bold text-[#181818] bg-white px-2 py-1 rounded-lg border-[1.5px] border-[#B4533C] text-center focus:outline-none w-full max-w-[220px]"
               />
               <button
                 type="submit"
-                className="p-1.5 rounded-lg bg-[#cc3a63] text-white hover:bg-[#b22b51] cursor-pointer shadow-xs"
+                className="p-1.5 rounded-lg bg-[#B4533C] text-white hover:bg-[#a04630] cursor-pointer"
                 title="Simpan"
               >
-                <Check className="w-4 h-4" />
+                <Check className="w-3.5 h-3.5" />
               </button>
             </form>
           ) : (
             <div className="flex items-center justify-center gap-1.5 mt-0.5">
-              <h2 className="text-[17px] sm:text-[19px] font-bold text-[#2b2620] font-heading leading-tight">
+              <h2 className="font-serif text-[17px] sm:text-[18px] font-bold text-[#181818] leading-tight">
                 {guestName}
               </h2>
               <button
@@ -213,7 +127,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   setTempName(guestName);
                   setIsEditing(true);
                 }}
-                className="p-1 text-[#847279] hover:text-[#cc3a63] transition-colors rounded cursor-pointer"
+                className="p-1 text-stone-500 hover:text-[#B4533C] transition-colors rounded cursor-pointer"
                 title="Ubah nama tamu"
               >
                 <Edit3 className="w-3.5 h-3.5" />
@@ -221,7 +135,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </div>
           )}
 
-          <span className="text-[11px] font-bold text-[#6b7742] block mt-0.5">
+          <span className="text-[11px] font-bold text-[#3E5B3D] block mt-0.5">
             di Tempat
           </span>
         </div>
@@ -230,15 +144,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         <button
           onClick={onOpenInvitation}
           id="openInvitationBtn"
-          className="mt-3.5 sm:mt-4 inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-full bg-[#cc3a63] text-white text-[15px] sm:text-[16px] font-extrabold shadow-[0_6px_20px_rgba(204,58,99,0.35)] hover:bg-[#b52f53] active:translate-y-0.5 transition-all w-full cursor-pointer group"
+          className="mt-4 inline-flex items-center justify-center gap-2.5 px-7 py-3 rounded-full bg-[#B4533C] text-white text-[15px] font-bold border-[2px] border-[#181818] shadow-[4px_4px_0px_#181818] hover:bg-[#a04630] active:translate-y-0.5 transition-all w-full cursor-pointer"
         >
-          <Mail className="w-5 h-5 group-hover:scale-110 transition-transform" />
+          <Mail className="w-4.5 h-4.5" />
           <span>Buka Undangan</span>
         </button>
 
         {/* Music notice subtext */}
-        <p className="text-[11px] sm:text-[11.5px] font-medium text-[#7a7065] mt-2 flex items-center justify-center gap-1.5">
-          <Music className="w-3.5 h-3.5 text-[#cc3a63] animate-pulse" />
+        <p className="text-[11px] font-medium text-stone-600 mt-2.5 flex items-center justify-center gap-1.5">
+          <Music className="w-3.5 h-3.5 text-[#B4533C] animate-pulse" />
           <span>Putar musik latar otomatis saat dibuka</span>
         </p>
       </div>

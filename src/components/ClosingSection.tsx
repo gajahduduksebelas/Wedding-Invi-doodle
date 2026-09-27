@@ -1,7 +1,10 @@
 import React from 'react';
-import { DOODLE_ASSETS } from '../data/weddingData';
 import { CoupleData } from '../types';
-import { Heart, Sparkles } from 'lucide-react';
+import {
+  DoodleKissingBirds,
+  DoodleHeartBalloons,
+  DoodleGiftBox,
+} from './DoodleIcons';
 
 interface ClosingSectionProps {
   couple?: CoupleData;
@@ -13,110 +16,63 @@ export const ClosingSection: React.FC<ClosingSectionProps> = ({ couple }) => {
   const weddingDate = couple?.weddingDate || 'Minggu, 14 Februari 2027';
 
   return (
-    <div className="w-full flex flex-col items-center">
+    <div className="w-full flex flex-col items-center select-none">
       {/* ============================================================ */}
-      {/* 1. CLOSING SECTION (FULL-PAGE MOBILE FRIENDLY)               */}
+      {/* 1. CLOSING SECTION                                           */}
       {/* ============================================================ */}
       <section
         id="closing"
-        className="min-h-dvh w-full px-4 py-8 flex flex-col items-center justify-center text-center relative overflow-hidden"
+        aria-label="Penutup"
+        className="w-full px-4 pt-10 pb-8 flex flex-col items-center justify-center text-center relative"
       >
-        {/* Floating Random Doodle Assets */}
-        <img
-          src={DOODLE_ASSETS.loveBirds}
-          alt=""
-          aria-hidden="true"
-          className="absolute top-5 left-3 w-16 sm:w-20 h-16 sm:h-20 object-contain pointer-events-none opacity-85 animate-doodle-float z-10"
-        />
-        <img
-          src={DOODLE_ASSETS.heartBalloons}
-          alt=""
-          aria-hidden="true"
-          className="absolute top-5 right-3 w-16 sm:w-20 h-16 sm:h-20 object-contain pointer-events-none opacity-85 animate-doodle-slow z-10"
-        />
-        <img
-          src={DOODLE_ASSETS.bouquet}
-          alt=""
-          aria-hidden="true"
-          className="absolute bottom-6 left-4 w-12 sm:w-14 h-12 sm:h-14 object-contain pointer-events-none opacity-85 animate-doodle-bob z-10"
-        />
-        <img
-          src={DOODLE_ASSETS.rings}
-          alt=""
-          aria-hidden="true"
-          className="absolute bottom-6 right-4 w-12 sm:w-14 h-12 sm:h-14 object-contain pointer-events-none opacity-85 animate-doodle-sway z-10"
-        />
-
-        <div className="absolute top-1/2 left-3 text-[#cc3a63]/30 pointer-events-none animate-doodle-pulse">
-          <Heart className="w-4 h-4 fill-current" />
-        </div>
-        <div className="absolute top-1/2 right-3 text-[#8b965f]/40 pointer-events-none animate-doodle-pulse">
-          <Sparkles className="w-5 h-5" />
-        </div>
-
-        <div className="w-full max-w-[400px] flex flex-col items-center relative z-20 my-auto">
-          {/* Closing Illustration Photo (Border-free soft shadow with washi tape) */}
-          <div className="relative w-48 h-48 sm:w-52 sm:h-52 rounded-3xl overflow-hidden shadow-[0_12px_40px_rgba(74,66,56,0.12)] bg-[#f9f0e0] mb-4">
-            <div
-              className="absolute -top-1 left-1/2 -translate-x-1/2 w-24 h-5 cd-tape-pink -rotate-1 rounded-xs shadow-xs pointer-events-none z-10"
-              aria-hidden="true"
-            />
-            <img
-              src="https://dev.janjiharmoni.id/themes/cute-doodle/2.webp"
-              alt={`${groomNickname} & ${brideNickname}`}
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
+        <div className="w-full max-w-[400px] flex flex-col items-center relative z-20">
+          {/* Hand-drawn mail doodle */}
+          <div className="mb-4">
+            <DoodleGiftBox className="w-16 h-auto" />
           </div>
 
-          {/* Hand Script: Terima Kasih */}
-          <p className="text-[38px] sm:text-[44px] font-hand text-[#cc3a63] -rotate-3 select-none">
+          {/* "Terima kasih" in Allura */}
+          <p className="font-allura text-[38px] sm:text-[44px] text-[#B4533C] leading-none mb-1">
             Terima kasih
           </p>
 
-          <p className="text-[13px] text-[#524348] max-w-[340px] leading-relaxed mt-2 font-sans">
-            Merupakan suatu kehormatan dan kebahagiaan bagi kami, apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu. Atas kehadiran dan doa restunya, kami mengucapkan terima kasih.
+          <p className="text-[13px] text-stone-700 max-w-[330px] leading-relaxed my-3 font-normal">
+            Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.
           </p>
 
-          <h2 className="text-[28px] sm:text-[32px] font-bold text-[#2b2620] font-heading mt-4">
+          {/* Couple Names */}
+          <h2 className="font-serif text-[30px] sm:text-[34px] font-normal text-[#B4533C] mt-2">
             {groomNickname} &amp; {brideNickname}
           </h2>
 
-          <p className="text-[13px] font-semibold text-[#7a7065] mt-0.5">
+          <p className="font-serif text-[13px] text-stone-600 mt-1">
             {weddingDate}
           </p>
-        </div>
-      </section>
 
-      {/* ============================================================ */}
-      {/* 2. FOOTER (CLEAN DOODLE BRANDING)                            */}
-      {/* ============================================================ */}
-      <footer id="footer" className="w-full px-4 pt-6 pb-28 flex flex-col items-center text-center">
-        <img
-          src={DOODLE_ASSETS.heartArrow}
-          alt=""
-          aria-hidden="true"
-          className="w-12 h-12 object-contain mb-2 animate-doodle-slow"
-        />
+          {/* Kissing Birds and Heart Balloon Doodles */}
+          <div className="w-full flex items-center justify-between mt-4 px-2">
+            <DoodleKissingBirds className="w-20 sm:w-24 h-auto" />
+            <DoodleHeartBalloons className="w-14 sm:w-16 h-auto" />
+          </div>
 
-        <p className="text-[16px] font-bold text-[#cc3a63] font-heading tracking-wide">
-          #{groomNickname}&amp;{brideNickname}
-        </p>
+          {/* Bottom Card in Sand/Mustard tone matching IMG_2713.PNG */}
+          <div className="w-full rounded-[28px] bg-[#EBD9A0] border-[2.5px] border-[#181818] shadow-[6px_6px_0px_#181818] p-6 mt-4 flex flex-col items-center text-center">
+            {/* Pill Tag */}
+            <div className="px-4 py-1 rounded-full bg-white border-[2px] border-[#181818] text-[12px] font-black text-[#181818] mb-3">
+              #{groomNickname}&amp;{brideNickname}
+            </div>
 
-        <p className="text-[12.5px] font-medium text-[#524348] mt-1">
-          {groomNickname} &amp; {brideNickname} Wedding Celebration
-        </p>
+            <p className="text-[14px] font-black text-[#181818]">
+              {groomNickname} &amp; {brideNickname} Wedding Celebration
+            </p>
 
-        <span className="text-[11.5px] text-[#7a7065] mt-1 block">
-          Dibuat dengan cinta, coretan doodle &amp; senyuman
-        </span>
-
-        <div className="mt-3">
-          <div className="px-3.5 py-1 rounded-full bg-[#f9f0e0] text-[11px] font-medium text-[#7a7065] shadow-2xs select-none">
-            Dibuat sendiri oleh Fadly 💖
+            {/* Subtext in Allura cursive */}
+            <p className="font-allura text-[24px] sm:text-[26px] text-[#B4533C] mt-2 leading-snug">
+              Dibuat dengan cinta, coretan doodle &amp; senyuman
+            </p>
           </div>
         </div>
-      </footer>
+      </section>
     </div>
   );
 };

@@ -179,6 +179,15 @@ export default function App() {
     return 'Budi Santoso & Partner';
   });
 
+  // Dynamic document title based on bride and groom name
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const groomNick = couple.groom.nickname || 'Arga';
+      const brideNick = couple.bride.nickname || 'Kirana';
+      document.title = `${brideNick} & ${groomNick} — Undangan Pernikahan`;
+    }
+  }, [couple.groom.nickname, couple.bride.nickname]);
+
   // Persistence to localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -387,7 +396,7 @@ export default function App() {
 
   // Otherwise, render the romantic, doodle-styled wedding invitation for invitees
   return (
-    <div className={`min-h-screen ${isOpened ? 'bg-[#fff7eb]' : 'bg-white'} text-[#2b2620] flex flex-col items-center relative selection:bg-[#fcecf0] selection:text-[#cc3a63]`}>
+    <div className={`min-h-screen bg-[#FAF7EE] text-[#181818] flex flex-col items-center relative selection:bg-[#FBE8E6] selection:text-[#B4533C]`}>
       {/* Toast Alert */}
       <Toast message={toast.message} isVisible={toast.isVisible} type={toast.type} />
 
@@ -400,7 +409,7 @@ export default function App() {
       />
 
       {/* 1. Interactive Cover Section (Single Full Mobile Page Gate) */}
-      <div className="w-full min-h-dvh flex items-center justify-center bg-white overflow-hidden">
+      <div className="w-full min-h-dvh flex items-center justify-center bg-[#FAF7EE] overflow-hidden">
         <HeroSection
           guestName={guestName}
           onUpdateGuestName={setGuestName}

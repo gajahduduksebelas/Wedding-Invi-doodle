@@ -1,7 +1,6 @@
 import React from 'react';
-import { DOODLE_ASSETS } from '../data/weddingData';
 import { LiveStreamConfig } from '../types';
-import { Video, ExternalLink, Sparkles, Heart } from 'lucide-react';
+import { DoodleOverlappingEnvelopes, SectionHeading } from './DoodleIcons';
 
 interface LiveStreamSectionProps {
   config?: LiveStreamConfig;
@@ -16,73 +15,44 @@ export const LiveStreamSection: React.FC<LiveStreamSectionProps> = ({ config }) 
   return (
     <section
       id="stream"
-      className="min-h-dvh w-full px-4 py-8 flex flex-col items-center justify-center relative overflow-hidden"
+      aria-label="Siaran Langsung"
+      className="w-full px-4 py-8 flex flex-col items-center justify-center select-none"
     >
-      {/* Floating Random Doodle Assets */}
-      <img
-        src={DOODLE_ASSETS.envelopes}
-        alt=""
-        aria-hidden="true"
-        className="absolute top-5 left-3 w-14 sm:w-16 h-14 sm:h-16 object-contain pointer-events-none opacity-85 animate-doodle-slow z-10"
-      />
-      <img
-        src={DOODLE_ASSETS.bells}
-        alt=""
-        aria-hidden="true"
-        className="absolute top-5 right-3 w-14 sm:w-16 h-14 sm:h-16 object-contain pointer-events-none opacity-85 animate-doodle-sway z-10"
-      />
-      <img
-        src={DOODLE_ASSETS.toast}
-        alt=""
-        aria-hidden="true"
-        className="absolute bottom-5 left-3 w-12 sm:w-14 h-12 sm:h-14 object-contain pointer-events-none opacity-85 animate-doodle-bob z-10"
-      />
-      <img
-        src={DOODLE_ASSETS.heartArrow}
-        alt=""
-        aria-hidden="true"
-        className="absolute bottom-5 right-3 w-12 sm:w-14 h-12 sm:h-14 object-contain pointer-events-none opacity-85 animate-doodle-float z-10"
-      />
-
-      <div className="absolute top-1/3 left-6 text-[#8b965f]/40 pointer-events-none animate-doodle-pulse">
-        <Sparkles className="w-5 h-5" />
-      </div>
-      <div className="absolute bottom-1/3 right-6 text-[#cc3a63]/30 pointer-events-none animate-doodle-pulse">
-        <Heart className="w-4 h-4 fill-current" />
-      </div>
-
-      <div className="w-full max-w-[400px] rounded-3xl bg-white/95 p-6 sm:p-8 shadow-[0_12px_40px_rgba(74,66,56,0.08)] flex flex-col items-center text-center relative z-20 my-auto overflow-hidden">
-        {/* Top Washi Tape */}
-        <div
-          className="absolute -top-3 w-28 h-6 cd-tape-sage -rotate-1 rounded-xs shadow-xs pointer-events-none"
-          aria-hidden="true"
-        />
-
-        {/* Heading Sage */}
-        <header className="cd-heading cd-heading-sage mb-3 mt-1">
-          <span>Saksikan dari mana saja</span>
-          <h2>LIVE STREAMING</h2>
-          <i aria-hidden="true" />
-        </header>
-
-        <p className="text-[13px] text-[#524348] leading-relaxed mb-4 font-sans">
-          Kami mengundang Bapak/Ibu/Saudara/i untuk menyaksikan pernikahan kami secara virtual yang disiarkan langsung melalui tautan di bawah ini.
-        </p>
-
-        <div className="px-4 py-1.5 rounded-full bg-[#f0f3e3] text-[12.5px] font-bold text-[#3b411e] mb-5 shadow-xs">
-          <strong>{liveDate} · {liveTime} {liveTz}</strong>
+      {/* Mint green backdrop container matching IMG_2713.PNG */}
+      <div className="w-full max-w-[400px] rounded-[30px] bg-[#D7E7DD] p-4 sm:p-5 relative pt-10">
+        {/* Overlapping Envelopes Doodle at top center */}
+        <div className="absolute -top-6 left-6 sm:left-8 z-30 pointer-events-none">
+          <DoodleOverlappingEnvelopes className="w-18 sm:w-20 h-auto" />
         </div>
 
-        <a
-          href={liveUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-[#8b965f] text-white text-[14px] font-bold shadow-[0_4px_14px_rgba(139,150,95,0.35)] hover:bg-[#788350] active:translate-y-0.5 transition-all cursor-pointer"
-        >
-          <Video className="w-4 h-4" />
-          <span>Saksikan Live</span>
-          <ExternalLink className="w-3.5 h-3.5 opacity-80" />
-        </a>
+        {/* Card Body */}
+        <div className="w-full doodle-card p-6 sm:p-7 flex flex-col items-center text-center relative z-20">
+          <SectionHeading
+            subheadline="Saksikan dari mana saja"
+            headline="LIVE STREAMING"
+            subheadlineColor="#2C4233"
+            headlineColor="#181818"
+            underlineColor="#181818"
+            className="mb-3"
+          />
+
+          <p className="text-[13px] text-stone-700 leading-relaxed mb-4 font-normal max-w-[300px]">
+            Kami mengundang Bapak/Ibu/Saudara/i untuk menyaksikan pernikahan kami secara virtual yang disiarkan langsung melalui media sosial di bawah ini
+          </p>
+
+          <p className="text-[13.5px] font-bold text-[#181818] mb-5">
+            {liveDate} · {liveTime} {liveTz}
+          </p>
+
+          <a
+            href={liveUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center px-8 py-2.5 rounded-full bg-[#EFE6CF] border-[2px] border-[#181818] shadow-[3.5px_3.5px_0px_#181818] text-[#181818] text-[13px] font-bold hover:bg-[#e4dac1] active:translate-y-0.5 transition-all cursor-pointer"
+          >
+            <span>Saksikan Live</span>
+          </a>
+        </div>
       </div>
     </section>
   );

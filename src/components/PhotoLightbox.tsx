@@ -46,15 +46,15 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
       <button
         onClick={onClose}
         aria-label="Tutup preview foto"
-        className="absolute top-4 right-4 p-2 rounded-full bg-white/90 text-[#211b12] hover:bg-white shadow-[2px_2px_0px_#4a4238] border border-[#4a4238] transition-all z-10"
+        className="absolute top-4 right-4 p-2 rounded-full bg-white/90 text-[#3A3232] hover:bg-white shadow-md border border-[#E8E0D5] transition-all z-10 cursor-pointer"
       >
-        <X className="w-6 h-6" />
+        <X className="w-5 h-5" />
       </button>
 
       {/* Main Container */}
       <div className="relative max-w-[500px] w-full flex flex-col items-center">
-        <div className="w-full bg-white p-3.5 rounded-2xl shadow-[5px_6px_0px_#4a4238] border-2 border-[#4a4238] overflow-hidden">
-          <div className="w-full max-h-[65vh] rounded-xl overflow-hidden bg-[#f9f0e0]">
+        <div className="w-full bg-white p-3.5 rounded-3xl shadow-[0_15px_50px_rgba(0,0,0,0.25)] border border-[#E8E0D5] overflow-hidden">
+          <div className="w-full max-h-[65vh] rounded-2xl overflow-hidden bg-[#FBF8F3]">
             <img
               src={photo.src}
               alt={photo.alt}
@@ -64,10 +64,10 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
 
           <div className="flex items-center justify-between mt-3 px-1">
             <div>
-              <h4 className="text-[17px] font-bold text-[#cc3a63] font-heading">
+              <h4 className="text-[17px] font-serif font-semibold text-[#6E1A2D]">
                 {photo.title}
               </h4>
-              <p className="text-[12px] font-medium text-[#7a7065] mt-0.5">
+              <p className="text-[11.5px] font-sans text-[#756868] mt-0.5">
                 Foto {currentIndex + 1} dari {photos.length}
               </p>
             </div>
@@ -75,14 +75,14 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
               <button
                 onClick={handlePrev}
                 aria-label="Foto sebelumnya"
-                className="p-2 rounded-full bg-[#f9f0e0] hover:bg-[#edd9bf] text-[#2b2620] border border-[#4a4238] shadow-[1px_2px_0px_#4a4238] active:translate-y-0.5 cursor-pointer"
+                className="p-2 rounded-full bg-[#FBF8F3] hover:bg-[#F7ECEF] text-[#6E1A2D] border border-[#E8E0D5] active:translate-y-0.5 transition-all cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={handleNext}
                 aria-label="Foto berikutnya"
-                className="p-2 rounded-full bg-[#f9f0e0] hover:bg-[#edd9bf] text-[#2b2620] border border-[#4a4238] shadow-[1px_2px_0px_#4a4238] active:translate-y-0.5 cursor-pointer"
+                className="p-2 rounded-full bg-[#FBF8F3] hover:bg-[#F7ECEF] text-[#6E1A2D] border border-[#E8E0D5] active:translate-y-0.5 transition-all cursor-pointer"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

@@ -29,7 +29,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   };
 
   return (
-    <nav className="fixed bottom-0 w-full z-40 pb-safe bg-[#fffdf9]/95 backdrop-blur-md border-t-2 border-[#4a4238] shadow-[0_-2px_10px_rgba(74,66,56,0.08)]">
+    <nav className="fixed bottom-0 w-full z-40 pb-safe bg-[#FAF7EE]/95 backdrop-blur-md border-t-2 border-[#181818] shadow-[0_-2px_8px_rgba(24,24,24,0.08)]">
       <div className="max-w-[460px] mx-auto flex items-center justify-around h-15 px-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -41,12 +41,12 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
               onClick={() => handleTabClick(tab.id, tab.targetId)}
               className={`flex flex-col items-center justify-center flex-1 h-12 transition-all cursor-pointer ${
                 isActive
-                  ? 'text-[#cc3a63] font-bold scale-105'
-                  : 'text-[#7a7065] hover:text-[#2b2620] font-semibold'
+                  ? 'text-[#B4533C] font-bold scale-105'
+                  : 'text-stone-500 hover:text-[#181818] font-semibold'
               }`}
             >
               <Icon className={`w-4.5 h-4.5 ${isActive ? 'stroke-[2.5px]' : 'stroke-2'}`} />
-              <span className="text-[10px] mt-0.5 tracking-tight font-heading">
+              <span className="text-[10px] mt-0.5 tracking-tight font-sans">
                 {tab.label}
               </span>
             </button>

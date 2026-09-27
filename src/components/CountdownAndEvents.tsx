@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Sparkles, Heart } from 'lucide-react';
-import { COUPLE_DATA, EVENTS_DATA, DOODLE_ASSETS } from '../data/weddingData';
+import { COUPLE_DATA, EVENTS_DATA } from '../data/weddingData';
 import { CoupleData, EventDetail } from '../types';
+import {
+  DoodleCalendar,
+  DoodleToastGlasses,
+  DoodleWeddingBells,
+  SectionHeading,
+} from './DoodleIcons';
 
 interface CountdownAndEventsProps {
   couple?: CoupleData;
   events?: EventDetail[];
 }
 
-export const CountdownAndEvents: React.FC<CountdownAndEventsProps> = ({ couple, events }) => {
+export const CountdownAndEvents: React.FC<CountdownAndEventsProps> = ({
+  couple,
+  events,
+}) => {
   const activeCouple = couple || COUPLE_DATA;
   const activeEvents = events || EVENTS_DATA;
 
@@ -46,203 +54,165 @@ export const CountdownAndEvents: React.FC<CountdownAndEventsProps> = ({ couple, 
   return (
     <div className="w-full flex flex-col items-center">
       {/* ============================================================ */}
-      {/* 1. SECTION: SAVE THE DATE (FULL-PAGE MOBILE FRIENDLY)        */}
+      {/* 1. SAVE THE DATE SECTION                                     */}
       {/* ============================================================ */}
       <section
         id="save-date"
-        className="min-h-dvh w-full px-4 py-8 flex flex-col items-center justify-center relative overflow-hidden"
+        aria-label="Hitung Mundur"
+        className="w-full px-4 py-8 flex flex-col items-center justify-center select-none"
       >
-        {/* Floating Random Doodle Assets */}
-        <img
-          src={DOODLE_ASSETS.calendar}
-          alt=""
-          aria-hidden="true"
-          className="absolute top-5 left-3 w-14 sm:w-16 h-14 sm:h-16 object-contain pointer-events-none opacity-90 animate-doodle-float z-10"
-        />
-        <img
-          src={DOODLE_ASSETS.heartBalloons}
-          alt=""
-          aria-hidden="true"
-          className="absolute top-6 right-3 w-16 sm:w-20 h-16 sm:h-20 object-contain pointer-events-none opacity-90 animate-doodle-slow z-10"
-        />
-        <img
-          src={DOODLE_ASSETS.rings}
-          alt=""
-          aria-hidden="true"
-          className="absolute bottom-6 left-4 w-12 sm:w-14 h-12 sm:h-14 object-contain pointer-events-none opacity-85 animate-doodle-sway z-10"
-        />
-        <img
-          src={DOODLE_ASSETS.envelopes}
-          alt=""
-          aria-hidden="true"
-          className="absolute bottom-6 right-4 w-12 sm:w-14 h-12 sm:h-14 object-contain pointer-events-none opacity-85 animate-doodle-bob z-10"
-        />
+        <div className="w-full max-w-[400px] rounded-[28px] bg-[#EBD9A0] border-[2px] border-dashed border-[#181818] p-6 sm:p-7 relative">
+          {/* Hanging Calendar Doodle on Top Right */}
+          <div className="absolute -top-6 -right-2 z-10 pointer-events-none">
+            <DoodleCalendar className="w-16 sm:w-18 h-auto" />
+          </div>
 
-        <div className="w-full max-w-[400px] rounded-3xl bg-[#8b965f] p-6 sm:p-8 shadow-[0_14px_45px_rgba(139,150,95,0.25)] text-center flex flex-col items-center relative z-20 my-auto overflow-hidden">
-          {/* Top Washi Tape */}
-          <div
-            className="absolute -top-3 w-28 h-6 cd-tape-pink -rotate-1 rounded-xs shadow-xs pointer-events-none"
-            aria-hidden="true"
+          <SectionHeading
+            subheadline="Menghitung hari"
+            headline="SAVE THE DATE"
+            subheadlineColor="#8D5B4C"
+            headlineColor="#181818"
+            underlineColor="#8D5B4C"
+            className="mb-5 mt-1"
           />
 
-          {/* Header Cream */}
-          <header className="cd-heading cd-heading-cream mb-4 mt-1">
-            <span>Menghitung hari</span>
-            <h2>SAVE THE DATE</h2>
-            <i aria-hidden="true" />
-          </header>
-
-          {/* 4 Countdown Cells (Border-free soft boxes) */}
-          <div className="grid grid-cols-4 gap-2.5 w-full mb-6" role="timer" aria-label="Hitung mundur acara">
-            <div className="rounded-2xl bg-white/95 p-3 shadow-sm flex flex-col items-center">
-              <span className="text-[26px] sm:text-[30px] font-black text-[#cc3a63] font-heading leading-tight">
-                {String(timeLeft.days).padStart(2, '0')}
+          {/* 4 Countdown Cells */}
+          <div
+            className="grid grid-cols-4 gap-2.5 w-full mb-6"
+            role="timer"
+            aria-label="Hitung mundur pernikahan"
+          >
+            <div className="rounded-2xl bg-white border-[2px] border-[#181818] shadow-[3.5px_3.5px_0px_#181818] py-2.5 px-1 flex flex-col items-center text-center">
+              <span className="font-delicious text-[34px] sm:text-[38px] font-black text-[#181818] leading-none">
+                {timeLeft.days}
               </span>
-              <span className="text-[10.5px] font-bold text-[#7a7065] uppercase mt-0.5">Hari</span>
+              <span className="text-[10px] font-bold text-stone-700 tracking-wider uppercase mt-0.5">
+                HARI
+              </span>
             </div>
 
-            <div className="rounded-2xl bg-white/95 p-3 shadow-sm flex flex-col items-center">
-              <span className="text-[26px] sm:text-[30px] font-black text-[#cc3a63] font-heading leading-tight">
-                {String(timeLeft.hours).padStart(2, '0')}
+            <div className="rounded-2xl bg-white border-[2px] border-[#181818] shadow-[3.5px_3.5px_0px_#181818] py-2.5 px-1 flex flex-col items-center text-center">
+              <span className="font-delicious text-[34px] sm:text-[38px] font-black text-[#181818] leading-none">
+                {timeLeft.hours}
               </span>
-              <span className="text-[10.5px] font-bold text-[#7a7065] uppercase mt-0.5">Jam</span>
+              <span className="text-[10px] font-bold text-stone-700 tracking-wider uppercase mt-0.5">
+                JAM
+              </span>
             </div>
 
-            <div className="rounded-2xl bg-white/95 p-3 shadow-sm flex flex-col items-center">
-              <span className="text-[26px] sm:text-[30px] font-black text-[#cc3a63] font-heading leading-tight">
-                {String(timeLeft.minutes).padStart(2, '0')}
+            <div className="rounded-2xl bg-white border-[2px] border-[#181818] shadow-[3.5px_3.5px_0px_#181818] py-2.5 px-1 flex flex-col items-center text-center">
+              <span className="font-delicious text-[34px] sm:text-[38px] font-black text-[#181818] leading-none">
+                {timeLeft.minutes}
               </span>
-              <span className="text-[10.5px] font-bold text-[#7a7065] uppercase mt-0.5">Menit</span>
+              <span className="text-[10px] font-bold text-stone-700 tracking-wider uppercase mt-0.5">
+                MENIT
+              </span>
             </div>
 
-            <div className="rounded-2xl bg-white/95 p-3 shadow-sm flex flex-col items-center">
-              <span className="text-[26px] sm:text-[30px] font-black text-[#cc3a63] font-heading leading-tight">
-                {String(timeLeft.seconds).padStart(2, '0')}
+            <div className="rounded-2xl bg-white border-[2px] border-[#181818] shadow-[3.5px_3.5px_0px_#181818] py-2.5 px-1 flex flex-col items-center text-center">
+              <span className="font-delicious text-[34px] sm:text-[38px] font-black text-[#181818] leading-none">
+                {timeLeft.seconds}
               </span>
-              <span className="text-[10.5px] font-bold text-[#7a7065] uppercase mt-0.5">Detik</span>
+              <span className="text-[10px] font-bold text-stone-700 tracking-wider uppercase mt-0.5">
+                DETIK
+              </span>
             </div>
           </div>
 
-          {/* Add to Google Calendar Pill */}
-          <a
-            href={googleCalendarUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-[#2b2620] text-[13px] font-bold shadow-md hover:bg-[#f9f0e0] active:translate-y-0.5 transition-all cursor-pointer"
-          >
-            <span>📅 Tambahkan ke Google Calendar</span>
-          </a>
+          {/* Add to Google Calendar Pill Button */}
+          <div className="w-full flex justify-center">
+            <a
+              href={googleCalendarUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-full bg-white border-[2px] border-[#181818] shadow-[3.5px_3.5px_0px_#181818] text-[#181818] text-[13px] font-bold hover:bg-[#FAF7EE] active:translate-y-0.5 transition-all cursor-pointer text-center"
+            >
+              <span>📅 Tambahkan ke Google Calendar</span>
+            </a>
+          </div>
         </div>
       </section>
 
       {/* ============================================================ */}
-      {/* 2. SECTION: DETAIL ACARA (FULL-PAGE MOBILE FRIENDLY)         */}
+      {/* 2. DETAIL ACARA SECTION                                      */}
       {/* ============================================================ */}
       <section
         id="acara"
-        className="min-h-dvh w-full px-4 py-8 flex flex-col items-center justify-center relative overflow-hidden"
+        aria-label="Detail Acara"
+        className="w-full px-4 py-8 flex flex-col items-center justify-center select-none"
       >
-        {/* Floating Random Doodle Assets */}
-        <img
-          src={DOODLE_ASSETS.toast}
-          alt=""
-          aria-hidden="true"
-          className="absolute top-5 left-3 w-14 sm:w-16 h-14 sm:h-16 object-contain pointer-events-none opacity-85 animate-doodle-bob z-10"
-        />
-        <img
-          src={DOODLE_ASSETS.bells}
-          alt=""
-          aria-hidden="true"
-          className="absolute top-5 right-3 w-14 sm:w-16 h-14 sm:h-16 object-contain pointer-events-none opacity-85 animate-doodle-sway z-10"
-        />
-        <img
-          src={DOODLE_ASSETS.bouquet}
-          alt=""
-          aria-hidden="true"
-          className="absolute bottom-5 left-4 w-12 sm:w-14 h-12 sm:h-14 object-contain pointer-events-none opacity-85 animate-doodle-float z-10"
-        />
-        <img
-          src={DOODLE_ASSETS.heartArrow}
-          alt=""
-          aria-hidden="true"
-          className="absolute bottom-5 right-4 w-12 sm:w-14 h-12 sm:h-14 object-contain pointer-events-none opacity-85 animate-doodle-slow z-10"
-        />
+        <div className="w-full max-w-[400px] flex flex-col items-center">
+          <SectionHeading
+            subheadline="Rangkaian prosesi"
+            headline="DETAIL ACARA"
+            subheadlineColor="#B4533C"
+            headlineColor="#181818"
+            underlineColor="#B4533C"
+            className="mb-2"
+          />
 
-        <div className="w-full max-w-[420px] flex flex-col items-center relative z-20 my-auto">
-          {/* Header Coral */}
-          <header className="cd-heading cd-heading-coral mb-2">
-            <span>Rangkaian prosesi</span>
-            <h2>Detail Acara</h2>
-            <i aria-hidden="true" />
-          </header>
-
-          <p className="text-[12.5px] sm:text-[13px] text-[#524348] text-center max-w-[360px] mb-5 font-sans">
+          <p className="text-[13px] text-stone-700 text-center max-w-[340px] leading-relaxed mb-6 font-normal">
             Kebahagiaan kami akan terasa lengkap dengan kehadiran Anda.
           </p>
 
-          {/* Event Cards (Border-free clean paper cards) */}
           <div className="w-full flex flex-col gap-5">
             {activeEvents.map((evt, idx) => {
-              const isAkad = evt.id === 'akad';
-              const doodleIcon = isAkad ? DOODLE_ASSETS.toast : DOODLE_ASSETS.bells;
-              const eventNumber = String(idx + 1).padStart(2, '0');
+              const isAkad = evt.id === 'akad' || idx === 0;
+              const eventNum = String(idx + 1).padStart(2, '0');
 
               return (
                 <article
                   key={evt.id}
-                  className="relative rounded-3xl bg-white/95 p-6 sm:p-7 shadow-[0_10px_35px_rgba(74,66,56,0.08)] flex flex-col items-center text-center overflow-hidden"
+                  className="w-full doodle-card p-6 sm:p-7 flex flex-col items-center text-center relative"
                 >
-                  {/* Top Washi Tape */}
-                  <div
-                    className={`absolute -top-3 w-24 h-5 ${isAkad ? 'cd-tape-pink -rotate-1' : 'cd-tape-sage rotate-1'} rounded-xs shadow-xs pointer-events-none`}
-                    aria-hidden="true"
-                  />
-
-                  {/* Event Doodle Top */}
-                  <img
-                    src={doodleIcon}
-                    alt=""
-                    aria-hidden="true"
-                    className="w-12 sm:w-14 h-12 sm:h-14 object-contain mb-1 mt-1 animate-doodle-slow"
-                  />
-
-                  {/* Event Number Badge */}
-                  <span className="text-[11.5px] font-bold text-[#cc3a63] font-heading tracking-widest block mb-0.5">
-                    {eventNumber}
+                  {/* Top-Left Order Number */}
+                  <span className="absolute top-5 left-6 text-[12px] font-mono font-medium text-stone-400">
+                    {eventNum}
                   </span>
 
-                  {/* Event Title */}
-                  <h3 className="text-[20px] sm:text-[22px] font-bold text-[#2b2620] font-heading">
+                  {/* Top-Right Hand-drawn Doodle */}
+                  <div className="absolute top-4 right-5 pointer-events-none">
+                    {isAkad ? (
+                      <DoodleToastGlasses className="w-12 sm:w-14 h-auto" />
+                    ) : (
+                      <DoodleWeddingBells className="w-12 sm:w-14 h-auto" />
+                    )}
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="font-serif text-[22px] sm:text-[24px] font-bold text-[#181818] tracking-wider uppercase mt-4 mb-1">
                     {evt.title}
                   </h3>
 
-                  <strong className="text-[14px] text-[#cc3a63] font-bold mt-1 block">
+                  {/* Date */}
+                  <span className="text-[14px] font-bold text-[#B4533C] block">
                     {evt.date}
+                  </span>
+
+                  {/* Time */}
+                  <span className="text-[13.5px] font-bold text-[#181818] block mt-0.5">
+                    {evt.time}
+                  </span>
+
+                  {/* Divider line */}
+                  <div className="w-16 h-0.5 bg-[#181818]/15 my-3" />
+
+                  {/* Location */}
+                  <strong className="text-[14.5px] font-bold text-[#181818] block">
+                    {evt.locationName}
                   </strong>
 
-                  <p className="text-[12.5px] font-semibold text-[#524348] mt-0.5">
-                    {evt.time}
+                  <p className="text-[12px] text-stone-600 mt-1 max-w-[300px] leading-relaxed">
+                    {evt.address}
                   </p>
 
-                  {/* Hand-drawn divider rule */}
-                  <div className="w-16 h-0.5 bg-[#4a4238]/15 my-2.5" />
-
-                  <b className="text-[14.5px] font-bold text-[#2b2620] block">
-                    {evt.locationName}
-                  </b>
-
-                  <small className="text-[12px] text-[#7a7065] mt-1 max-w-[280px] leading-relaxed block">
-                    {evt.address}
-                  </small>
-
-                  {/* Maps Location Pill */}
+                  {/* Button Lihat Lokasi */}
                   <a
                     href={evt.mapsUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-3.5 inline-flex items-center justify-center gap-1.5 px-5 py-2 rounded-full bg-[#cc3a63] text-white text-[12.5px] font-bold shadow-[0_4px_14px_rgba(204,58,99,0.3)] hover:bg-[#b52f53] active:translate-y-0.5 transition-all cursor-pointer"
+                    className="mt-4 inline-flex items-center justify-center px-6 py-2 rounded-full bg-[#B4533C] text-white border-[2px] border-[#181818] shadow-[3.5px_3.5px_0px_#181818] text-[12.5px] font-bold hover:bg-[#a04630] active:translate-y-0.5 transition-all cursor-pointer"
                   >
-                    <MapPin className="w-4 h-4" />
                     <span>Lihat Lokasi</span>
                   </a>
                 </article>

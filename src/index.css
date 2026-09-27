@@ -1,103 +1,82 @@
 @import "tailwindcss";
 
 @theme {
-  --font-epilogue: "Epilogue", sans-serif;
-  --font-quicksand: "Quicksand", sans-serif;
-  --font-hand: "Caveat", cursive;
+  --font-delicious: "Delicious Handrawn", cursive;
+  --font-allura: "Allura", cursive;
+  --font-serif: "Lora", serif;
+  --font-sans: "Plus Jakarta Sans", "Quicksand", sans-serif;
 
-  --color-cream: #fff7eb;
-  --color-linen: #f9f0e0;
-  --color-sage: #8b965f;
-  --color-sage-light: #f0f3e3;
-  --color-coral: #cc3a63;
-  --color-coral-light: #fcecf0;
-  --color-ink: #2b2620;
+  --color-cream-bg: #FAF7EE;
+  --color-terracotta: #B4533C;
+  --color-sage: #4E6B47;
+  --color-mustard: #EAD69B;
+  --color-card-border: #181818;
 }
 
 html {
   scroll-behavior: smooth;
-  background-color: #fff7eb;
+  background-color: #FAF7EE;
 }
 
 body {
-  font-family: var(--font-quicksand);
-  background-color: #fff7eb;
-  color: #2b2620;
+  font-family: var(--font-sans);
+  background-color: #FAF7EE;
+  color: #181818;
 }
 
-h1, h2, h3, h4, .font-heading {
-  font-family: var(--font-epilogue);
+.font-delicious {
+  font-family: var(--font-delicious);
 }
 
-.font-hand {
-  font-family: var(--font-hand);
+.font-allura {
+  font-family: var(--font-allura);
 }
 
-/* Squiggle underline for cd-heading */
-.cd-heading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  margin-bottom: 1rem;
+.font-serif {
+  font-family: var(--font-serif);
 }
 
-.cd-heading span {
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  margin-bottom: 0.2rem;
+/* Doodle Card and Button Utilities */
+.doodle-card {
+  background-color: #ffffff;
+  border: 2.5px solid #181818;
+  border-radius: 28px;
+  box-shadow: 6px 6px 0px #181818;
 }
 
-.cd-heading h2 {
-  font-family: var(--font-epilogue);
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  line-height: 1.2;
+.doodle-card-sm {
+  background-color: #ffffff;
+  border: 2px solid #181818;
+  border-radius: 20px;
+  box-shadow: 4px 4px 0px #181818;
 }
 
-.cd-heading i {
-  display: block;
-  width: 54px;
-  height: 8px;
-  margin-top: 0.35rem;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
+.doodle-button {
+  border: 2px solid #181818;
+  box-shadow: 4px 4px 0px #181818;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
-.cd-heading-coral span { color: #cc3a63; }
-.cd-heading-coral h2 { color: #2b2620; }
-.cd-heading-coral i {
-  background-image: url("data:image/svg+xml,%3Csvg width='54' height='8' viewBox='0 0 54 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 5C8 2 13 6 18 3C23 1 29 6 35 3C41 1 47 6 52 4' stroke='%23cc3a63' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+.doodle-button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1.5px 1.5px 0px #181818;
 }
 
-.cd-heading-sage span { color: #6b7742; }
-.cd-heading-sage h2 { color: #2b2620; }
-.cd-heading-sage i {
-  background-image: url("data:image/svg+xml,%3Csvg width='54' height='8' viewBox='0 0 54 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 5C8 2 13 6 18 3C23 1 29 6 35 3C41 1 47 6 52 4' stroke='%238b965f' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-}
-
-.cd-heading-cream span { color: #e6dac5; }
-.cd-heading-cream h2 { color: #ffffff; }
-.cd-heading-cream i {
-  background-image: url("data:image/svg+xml,%3Csvg width='54' height='8' viewBox='0 0 54 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 5C8 2 13 6 18 3C23 1 29 6 35 3C41 1 47 6 52 4' stroke='%23f9f0e0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+.doodle-pill {
+  border: 1.5px solid #181818;
+  border-radius: 9999px;
+  box-shadow: 2px 2px 0px #181818;
 }
 
 /* Washi Tape styling */
 .cd-tape-pink {
-  background-color: #f8b4c4;
-  background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255, 255, 255, 0.35) 5px, rgba(255, 255, 255, 0.35) 10px);
-  border: 1px dashed rgba(204, 58, 99, 0.4);
+  background-color: #f7c6ba;
+  border: 1px dashed rgba(180, 83, 60, 0.4);
 }
 
 .cd-tape-sage {
-  background-color: #b8c596;
-  background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255, 255, 255, 0.35) 5px, rgba(255, 255, 255, 0.35) 10px);
-  border: 1px dashed rgba(107, 119, 66, 0.4);
+  background-color: #c6e2cb;
+  border: 1px dashed rgba(78, 107, 71, 0.4);
 }
 
 /* Floating animation for doodles */
