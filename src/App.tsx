@@ -411,8 +411,10 @@ export default function App() {
     setWishes((prev) => [newWish, ...prev]);
 
     if (isSupabaseConfigured && supabase) {
+      // newWish.id is a local timestamp-based string (e.g. "w-1790519190199"),
+      // used only as a React key — the wishes table's id column is a real
+      // uuid, so we omit it here and let Postgres generate one.
       const { error } = await supabase.from('wishes').insert({
-        id: newWish.id,
         name: newWish.name,
         status: newWish.status,
         guest_count: (newWish as any).guestCount ?? 1,
