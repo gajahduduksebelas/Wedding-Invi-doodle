@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MEDIA_BUCKET, uploadMedia } from '../../lib/mediaUpload';
+import { DEFAULT_AUDIO_URL } from '../../data/weddingData';
 import {
   Music,
   Upload,
@@ -25,11 +26,11 @@ interface AudioPreset {
 
 const PRESET_TRACKS: AudioPreset[] = [
   {
-    id: 'acoustic-guitar',
-    title: 'Romantic Acoustic Guitar',
-    artist: 'Acoustic Wedding Music (Default)',
-    genre: 'Fingerstyle Romantis',
-    url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=romantic-acoustic-guitar-112191.mp3',
+    id: 'music-box-canon',
+    title: 'Canon in D (Music Box)',
+    artist: 'Lagu Bawaan Undangan',
+    genre: 'Kotak Musik Manis',
+    url: DEFAULT_AUDIO_URL,
   },
   {
     id: 'canon-in-d',

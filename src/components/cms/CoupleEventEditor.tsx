@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Heart, Calendar, Clock, MapPin, Music, Sparkles, Save, RotateCcw, Upload, Crop, Video, Eye, EyeOff } from 'lucide-react';
 import { CoupleData, EventDetail } from '../../types';
-import { COUPLE_DATA, EVENTS_DATA } from '../../data/weddingData';
+import { COUPLE_DATA, EVENTS_DATA, DEFAULT_GROOM_IMAGE, DEFAULT_BRIDE_IMAGE } from '../../data/weddingData';
 import { ImageCropperModal, PHOTO_ASPECTS } from './ImageCropperModal';
 import { AudioUploader } from './AudioUploader';
 import { useDraftReporter } from '../../lib/useDraftReporter';
@@ -219,7 +219,7 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
 
             <div className="flex items-center gap-3 p-3 rounded-xl bg-[#fdfaf5] border border-[#e6dac5]">
               <img
-                src={formData.groom.image || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300'}
+                src={formData.groom.image || DEFAULT_GROOM_IMAGE}
                 alt="Groom avatar"
                 className="w-24 aspect-[4/3] rounded-[12px] object-cover border-2 border-[#181818] shadow-sm shrink-0"
               />
@@ -341,7 +341,7 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
 
             <div className="flex items-center gap-3 p-3 rounded-xl bg-[#fdfaf5] border border-[#e6dac5]">
               <img
-                src={formData.bride.image || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300'}
+                src={formData.bride.image || DEFAULT_BRIDE_IMAGE}
                 alt="Bride avatar"
                 className="w-24 aspect-[4/3] rounded-[12px] object-cover border-2 border-[#181818] shadow-sm shrink-0"
               />

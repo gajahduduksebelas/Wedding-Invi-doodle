@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { DEFAULT_AUDIO_URL } from '../data/weddingData';
 
 export const BACKGROUND_MUSIC_ID = 'backgroundMusic';
 
@@ -121,7 +122,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       <audio
         id={BACKGROUND_MUSIC_ID}
         ref={audioRef}
-        src={audioUrl || 'https://dev.janjiharmoni.id/themes/cute-doodle/music.mp3'}
+        src={audioUrl || DEFAULT_AUDIO_URL}
         loop
         preload="metadata"
         onError={() => setAudioError(true)}

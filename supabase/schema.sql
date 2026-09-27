@@ -118,6 +118,15 @@ drop policy if exists "Admins can delete wedding media" on storage.objects;
 create policy "Admins can delete wedding media" on storage.objects
   for delete using (bucket_id = 'wedding-media' and is_admin());
 
+-- 7. Snapshots of the settings row taken before bulk data changes (admin
+-- maintenance only; no policies, so it is not reachable via the public API).
+create table if not exists site_settings_backup (
+  backed_up_at timestamptz not null default now(),
+  reason text not null,
+  row_data jsonb not null
+);
+alter table site_settings_backup enable row level security;
+
 -- Seed the single settings row with placeholder defaults (CMS will overwrite via first save)
 insert into site_settings (id, couple, events, banks, photos, video_config, gift_address)
 values (

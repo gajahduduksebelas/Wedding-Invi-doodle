@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { GALLERY_PHOTOS, extractYouTubeId } from '../data/weddingData';
+import { GALLERY_PHOTOS, DEFAULT_VIDEO_URL, extractYouTubeId } from '../data/weddingData';
 import { GalleryPhoto, VideoConfig } from '../types';
 import { PhotoLightbox } from './PhotoLightbox';
 import { DoodleBouquet, SectionHeading } from './DoodleIcons';
@@ -32,7 +32,7 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
   const galleryVideoSrc =
     video?.directVideoUrl ||
     video?.embedUrl ||
-    'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-bride-and-groom-holding-each-other-41484-large.mp4';
+    DEFAULT_VIDEO_URL;
   const shouldLoop = video?.loop !== false;
   // Browsers only autoplay muted video; guests can unmute in the player.
   const startMuted = video?.muted !== false;
