@@ -25,7 +25,7 @@ export const AnnouncementSection: React.FC<AnnouncementSectionProps> = ({ couple
       {/* Cover photo: the top half of the screen, cropped 1:1 in the CMS,
           with paper grain and a torn-paper edge into the page below. */}
       <div className="relative w-full max-w-[460px] shrink-0">
-        <div className="paper-grain w-full aspect-square max-h-[50dvh] overflow-hidden bg-[#EFE3C6]">
+        <div className="paper-grain w-full aspect-square max-h-[calc(var(--app-h,100dvh)*0.5)] overflow-hidden bg-[#EFE3C6]">
           <img
             src={coverImage}
             alt={`${groomName} & ${brideName}`}
