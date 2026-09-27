@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Send,
   Heart,
@@ -15,10 +15,12 @@ import {
   X,
   Check,
   ShieldCheck,
-  Video,
   KeyRound,
   LogOut,
   Lock,
+  Save,
+  Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   CoupleData,
@@ -28,6 +30,7 @@ import {
   GalleryPhoto,
   Wish,
   WhatsAppGuest,
+  SaveStatus,
 } from '../../types';
 import { WhatsappBlaster } from './WhatsappBlaster';
 import { CoupleEventEditor } from './CoupleEventEditor';
@@ -68,7 +71,19 @@ interface CmsDashboardProps {
   onSwitchToInvitation: () => void;
   onShowToast: (message: string, type?: 'success' | 'copy') => void;
   onLogout?: () => void;
+  saveStatus?: SaveStatus;
+  onRequestSave?: () => void;
 }
+
+// Tabs whose editors keep a local draft until saved.
+type DraftTabId = 'couple-event' | 'gallery' | 'video' | 'gifts';
+
+const DRAFT_TAB_LABELS: Record<DraftTabId, string> = {
+  'couple-event': 'Mempelai & Acara',
+  gallery: 'Galeri',
+  video: 'Video',
+  gifts: 'Kado',
+};
 
 export const CmsDashboard: React.FC<CmsDashboardProps> = ({
   couple,
@@ -88,6 +103,8 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
   onSwitchToInvitation,
   onShowToast,
   onLogout,
+  saveStatus = 'idle',
+  onRequestSave,
 }) => {
   const [activeTab, setActiveTab] = useState<CmsTabId>('wa-blaster');
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
@@ -97,27 +114,71 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
   const [passwordError, setPasswordError] = useState('');
   const tabButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  const isLiveStreamEnabled = couple.liveStream?.enabled !== false;
+  // --- Unsaved edits (autosave + global save) ---
+  // Each editor reports its unsaved draft; we keep a "commit" function per
+  // tab that pushes that draft into the app state (which the app then saves
+  // to the database). Drafts are committed automatically when switching
+  // tabs, leaving the CMS or hiding the browser tab, and all at once by the
+  // global save button.
+  const draftCommitsRef = useRef<Partial<Record<DraftTabId, () => void>>>({});
+  const [dirtyTabs, setDirtyTabs] = useState<DraftTabId[]>([]);
 
-  const handleQuickToggleLiveStream = () => {
-    const nextState = !isLiveStreamEnabled;
-    const updatedCouple: CoupleData = {
-      ...couple,
-      liveStream: {
-        enabled: nextState,
-        platformUrl: couple.liveStream?.platformUrl || 'https://youtube.com/live/argakirana',
-        date: couple.liveStream?.date || couple.weddingDate || 'Minggu, 14 Februari 2027',
-        time: couple.liveStream?.time || '09:00',
-        timezone: couple.liveStream?.timezone || 'WIB',
-      },
-    };
-    onSaveCoupleAndEvents(updatedCouple, events);
+  const setDraft = useCallback((tab: DraftTabId, commit: (() => void) | null) => {
+    if (commit) draftCommitsRef.current[tab] = commit;
+    else delete draftCommitsRef.current[tab];
+    setDirtyTabs((prev) => {
+      const has = prev.includes(tab);
+      if (commit && !has) return [...prev, tab];
+      if (!commit && has) return prev.filter((t) => t !== tab);
+      return prev;
+    });
+  }, []);
+
+  // Returns the labels of the tabs that were saved (empty if nothing was dirty).
+  const commitDrafts = useCallback((): string[] => {
+    const pending = Object.entries(draftCommitsRef.current) as [DraftTabId, () => void][];
+    if (pending.length === 0) return [];
+    draftCommitsRef.current = {};
+    setDirtyTabs([]);
+    pending.forEach(([, commit]) => commit());
+    return pending.map(([tab]) => DRAFT_TAB_LABELS[tab]);
+  }, []);
+
+  const handleSaveAll = () => {
+    const saved = commitDrafts();
+    onRequestSave?.();
     onShowToast(
-      nextState
-        ? '🟢 Bagian Live Streaming AKTIF (ditampilkan di undangan)'
-        : '⚪ Bagian Live Streaming NONAKTIF (disembunyikan dari tamu)',
+      saved.length > 0 ? `💾 Menyimpan: ${saved.join(', ')}` : '💾 Menyimpan ulang semua data...',
       'success'
     );
+  };
+
+  // Autosave when the admin switches to another browser tab / app, closes the
+  // laptop lid, etc.
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') commitDrafts();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [commitDrafts]);
+
+  // Warn before closing/reloading while something is still unsaved.
+  const hasUnsavedWork = dirtyTabs.length > 0 || saveStatus === 'pending' || saveStatus === 'saving';
+  useEffect(() => {
+    if (!hasUnsavedWork) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      commitDrafts();
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [hasUnsavedWork, commitDrafts]);
+
+  const handleLeaveToInvitation = () => {
+    commitDrafts();
+    onSwitchToInvitation();
   };
 
   const handleSaveNewPassword = async (e: React.FormEvent) => {
@@ -155,6 +216,7 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
 
   const handleLogout = () => {
     if (confirm('Kunci CMS dan keluar ke halaman undangan?')) {
+      commitDrafts();
       if (onLogout) {
         onLogout();
       } else {
@@ -240,6 +302,12 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
   };
 
   const handleSelectTab = (tabId: CmsTabId) => {
+    if (tabId !== activeTab) {
+      const saved = commitDrafts();
+      if (saved.length > 0) {
+        onShowToast(`✅ Perubahan ${saved.join(', ')} disimpan otomatis`, 'success');
+      }
+    }
     setActiveTab(tabId);
     setIsMobileDrawerOpen(false);
     // Smooth scroll the tab button into center view
@@ -278,7 +346,7 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
           <div className="flex items-center gap-2 min-w-0">
             <button
               type="button"
-              onClick={onSwitchToInvitation}
+              onClick={handleLeaveToInvitation}
               className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#F0F9FF] hover:bg-[#E0F2FE] text-[#1E293B] text-[11px] sm:text-[12px] font-bold border-2 border-[#1E293B] shadow-[1px_1.5px_0px_#1E293B] active:translate-y-0.5 transition-all cursor-pointer shrink-0"
               title="Kembali ke tampilan undangan tamu"
             >
@@ -304,20 +372,48 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
 
           {/* Right: Quick Action Buttons */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Quick Live Stream Turn On/Off Toggle */}
+            {/* Global Save: commits every tab's unsaved edits and shows the
+                database save status */}
             <button
               type="button"
-              onClick={handleQuickToggleLiveStream}
-              className={`inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl text-[10.5px] sm:text-[11px] font-bold border-2 shadow-[1px_1.5px_0px_#1E293B] active:translate-y-0.5 transition-all cursor-pointer ${
-                isLiveStreamEnabled
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-500 hover:bg-emerald-100'
-                  : 'bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200'
+              onClick={handleSaveAll}
+              disabled={saveStatus === 'saving' && dirtyTabs.length === 0}
+              className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-[10.5px] sm:text-[11.5px] font-bold border-2 border-[#1E293B] shadow-[1px_1.5px_0px_#1E293B] active:translate-y-0.5 transition-all cursor-pointer disabled:cursor-wait ${
+                dirtyTabs.length > 0
+                  ? 'bg-[#cc3a63] text-white hover:bg-[#b52d53]'
+                  : saveStatus === 'error'
+                  ? 'bg-red-50 text-red-700 hover:bg-red-100'
+                  : saveStatus === 'pending' || saveStatus === 'saving'
+                  ? 'bg-[#FEF9C3] text-[#92400E]'
+                  : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
               }`}
-              title="Nyalakan / Matikan bagian Live Streaming di undangan"
+              title="Simpan semua perubahan di semua tab"
             >
-              <Video className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Live:</span>
-              <span className="font-extrabold">{isLiveStreamEnabled ? 'ON' : 'OFF'}</span>
+              {dirtyTabs.length > 0 ? (
+                <>
+                  <Save className="w-3.5 h-3.5" />
+                  <span>
+                    Simpan<span className="hidden sm:inline"> Semua</span> ({dirtyTabs.length})
+                  </span>
+                </>
+              ) : saveStatus === 'pending' || saveStatus === 'saving' ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Menyimpan…</span>
+                </>
+              ) : saveStatus === 'error' ? (
+                <>
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>
+                    Gagal<span className="hidden sm:inline"> · Coba Lagi</span>
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Tersimpan</span>
+                </>
+              )}
             </button>
 
             {/* Change Password Tab Button */}
@@ -454,6 +550,13 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
               >
                 <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-[#64748B]'}`} />
                 <span className="whitespace-nowrap">{tab.label}</span>
+                {dirtyTabs.includes(tab.id as DraftTabId) && (
+                  <span
+                    className="w-2 h-2 rounded-full bg-[#cc3a63] ring-2 ring-white"
+                    title="Ada perubahan yang belum disimpan"
+                    aria-label="belum disimpan"
+                  />
+                )}
                 {tab.badge && (
                   <span
                     className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold whitespace-nowrap ${
@@ -491,6 +594,9 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
             events={events}
             onSave={onSaveCoupleAndEvents}
             onShowToast={onShowToast}
+            onDraftChange={(draft) =>
+              setDraft('couple-event', draft && (() => onSaveCoupleAndEvents(draft.couple, draft.events)))
+            }
           />
         )}
 
@@ -499,6 +605,7 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
             photos={photos}
             onSave={onSavePhotos}
             onShowToast={onShowToast}
+            onDraftChange={(draft) => setDraft('gallery', draft && (() => onSavePhotos(draft)))}
           />
         )}
 
@@ -507,6 +614,7 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
             videoConfig={videoConfig}
             onSave={onSaveVideoConfig}
             onShowToast={onShowToast}
+            onDraftChange={(draft) => setDraft('video', draft && (() => onSaveVideoConfig(draft)))}
           />
         )}
 
@@ -516,6 +624,9 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
             giftAddress={giftAddress}
             onSave={onSaveBanksAndAddress}
             onShowToast={onShowToast}
+            onDraftChange={(draft) =>
+              setDraft('gifts', draft && (() => onSaveBanksAndAddress(draft.banks, draft.address)))
+            }
           />
         )}
 

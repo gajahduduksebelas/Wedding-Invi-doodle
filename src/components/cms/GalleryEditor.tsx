@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useDraftReporter } from '../../lib/useDraftReporter';
 import {
   Image as ImageIcon,
   Plus,
@@ -14,20 +15,23 @@ import {
 } from 'lucide-react';
 import { GalleryPhoto } from '../../types';
 import { GALLERY_PHOTOS } from '../../data/weddingData';
-import { ImageCropperModal } from './ImageCropperModal';
+import { ImageCropperModal, PHOTO_ASPECTS } from './ImageCropperModal';
 
 interface GalleryEditorProps {
   photos: GalleryPhoto[];
   onSave: (newPhotos: GalleryPhoto[]) => void;
   onShowToast: (message: string) => void;
+  onDraftChange?: (draft: GalleryPhoto[] | null) => void;
 }
 
 export const GalleryEditor: React.FC<GalleryEditorProps> = ({
   photos,
   onSave,
   onShowToast,
+  onDraftChange,
 }) => {
   const [photoList, setPhotoList] = useState<GalleryPhoto[]>(photos);
+  useDraftReporter(photoList, photos, onDraftChange);
   const [newPhotoUrl, setNewPhotoUrl] = useState('');
   const [newPhotoTitle, setNewPhotoTitle] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
@@ -190,7 +194,7 @@ export const GalleryEditor: React.FC<GalleryEditorProps> = ({
               Tambah Foto dari Galeri / Kamera
             </h3>
             <p className="text-[12px] text-[#7a7065]">
-              Pilih foto dari galeri HP, lalu sesuaikan zoom &amp; potongan rasio 4:5 vertikal.
+              Pilih foto dari galeri HP, lalu sesuaikan zoom &amp; potongan rasio 3:4 — sama dengan kotak foto di galeri undangan.
             </p>
           </div>
 
@@ -284,8 +288,8 @@ export const GalleryEditor: React.FC<GalleryEditorProps> = ({
                 key={photo.id}
                 className="rounded-2xl bg-[#fffdfa] p-2 sm:p-2.5 border-2 border-[#4a4238] shadow-[2px_3px_0px_#4a4238] relative flex flex-col gap-2 group transition-all"
               >
-                {/* Image Aspect Box */}
-                <div className="w-full aspect-[4/5] rounded-xl overflow-hidden bg-[#f9f0e0] border border-[#e6dac5] relative">
+                {/* Image Aspect Box: same 3:4 tile as the invitation gallery */}
+                <div className="w-full aspect-[3/4] rounded-xl overflow-hidden bg-[#f9f0e0] border border-[#e6dac5] relative">
                   <img
                     src={photo.src}
                     alt={photo.alt || photo.title}
@@ -391,7 +395,8 @@ export const GalleryEditor: React.FC<GalleryEditorProps> = ({
         onClose={() => setIsCropperOpen(false)}
         initialImage={cropperInitialImage}
         onCropComplete={handleCropComplete}
-        targetAspectRatio="4:5"
+        targetAspectRatio={PHOTO_ASPECTS.gallery}
+        previewLabel="Kotak foto di Galeri"
         title={editingPhotoId ? 'Potong / Edit Foto Galeri' : 'Upload & Crop Foto Baru'}
       />
     </form>

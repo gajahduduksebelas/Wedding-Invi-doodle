@@ -11,7 +11,7 @@ import { GiftSection } from './components/GiftSection';
 import { RsvpSection } from './components/RsvpSection';
 import { ClosingSection } from './components/ClosingSection';
 import { BottomNavigation } from './components/BottomNavigation';
-import { AudioPlayer } from './components/AudioPlayer';
+import { AudioPlayer, startBackgroundMusicFromGesture } from './components/AudioPlayer';
 import { Toast } from './components/Toast';
 import { CmsDashboard } from './components/cms/CmsDashboard';
 import { CmsAuthGate } from './components/cms/CmsAuthGate';
@@ -36,6 +36,7 @@ import {
   BankAccount,
   GalleryPhoto,
   WhatsAppGuest,
+  SaveStatus,
 } from './types';
 
 export default function App() {
@@ -151,6 +152,9 @@ export default function App() {
   // effect compares against it so loading data (or a guest's browser
   // re-rendering it) never triggers a write back to the database.
   const lastSyncedSettingsRef = React.useRef<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  // Bumped by the CMS "save all" button to retry a failed save right away.
+  const [saveRequest, setSaveRequest] = useState(0);
 
   const mapWaGuestRow = (g: any): WhatsAppGuest => ({
     id: g.id,
@@ -272,15 +276,22 @@ export default function App() {
       video_config: videoConfig,
       gift_address: giftAddress,
     };
-    if (JSON.stringify(settings) === lastSyncedSettingsRef.current) return;
+    if (JSON.stringify(settings) === lastSyncedSettingsRef.current) {
+      // An edit that was undone before its save ran is already in sync.
+      setSaveStatus((status) => (status === 'pending' ? 'saved' : status));
+      return;
+    }
 
+    setSaveStatus('pending');
     let cancelled = false;
     const timer = setTimeout(async () => {
+      setSaveStatus('saving');
       let toSave = settings;
       try {
         toSave = await uploadInlineMedia(settings);
       } catch (err) {
         console.error('[supabase] media upload failed', err);
+        if (!cancelled) setSaveStatus('error');
         showToast('⚠️ Gagal mengunggah media ke server. Coba lagi.', 'pause');
         return;
       }
@@ -305,17 +316,19 @@ export default function App() {
       });
       if (error) {
         console.error('[supabase] failed to save settings', error);
+        if (!cancelled) setSaveStatus('error');
         showToast('⚠️ Gagal menyimpan perubahan ke server.', 'pause');
         return;
       }
       lastSyncedSettingsRef.current = JSON.stringify(settings);
+      if (!cancelled) setSaveStatus('saved');
     }, 700);
 
     return () => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [couple, events, videoConfig, banks, giftAddress, photos, isDataReady, isCmsAuthenticated]);
+  }, [couple, events, videoConfig, banks, giftAddress, photos, isDataReady, isCmsAuthenticated, saveRequest]);
 
   // Wishes and wa_guests are NOT written here — they live in their own
   // Supabase tables and are written directly at the point of change
@@ -346,6 +359,7 @@ export default function App() {
       wasPlayingBeforeVideoRef.current = false;
       showToast('⏸️ Musik Dijeda', 'pause');
     } else {
+      startBackgroundMusicFromGesture();
       setIsPlaying(true);
       wasPlayingBeforeVideoRef.current = true;
       showToast('🎵 Memutar Musik', 'music');
@@ -372,6 +386,7 @@ export default function App() {
   };
 
   const handleOpenInvitation = () => {
+    startBackgroundMusicFromGesture();
     setIsOpened(true);
     wasPlayingBeforeVideoRef.current = true;
     if (!isPlaying) {
@@ -622,6 +637,8 @@ export default function App() {
           onUpdateWaGuests={handleUpdateWaGuests}
           onSwitchToInvitation={handleSwitchToInvitation}
           onShowToast={showToast}
+          saveStatus={saveStatus}
+          onRequestSave={() => setSaveRequest((n) => n + 1)}
           onLogout={async () => {
             if (isSupabaseConfigured && supabase) await supabase.auth.signOut();
             setIsCmsAuthenticated(false);

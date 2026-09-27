@@ -34,6 +34,8 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
     video?.embedUrl ||
     'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-bride-and-groom-holding-each-other-41484-large.mp4';
   const shouldLoop = video?.loop !== false;
+  // Browsers only autoplay muted video; guests can unmute in the player.
+  const startMuted = video?.muted !== false;
 
   // YouTube iframe player is driven through its postMessage API (enablejsapi=1).
   const sendYoutubeCommand = useCallback((func: string) => {
@@ -179,11 +181,23 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
               key={youtubeId}
               className="w-full h-full"
               src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&rel=0${
-                shouldLoop ? `&loop=1&playlist=${youtubeId}` : ''
-              }`}
+                startMuted ? '&mute=1' : ''
+              }${shouldLoop ? `&loop=1&playlist=${youtubeId}` : ''}&origin=${encodeURIComponent(
+                window.location.origin
+              )}`}
               title={video?.title || 'Video Prewedding'}
-              allow="autoplay; encrypted-media; picture-in-picture"
+              allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+              // YouTube rejects embeds that arrive without a referrer
+              // ("Error 153"), so send the page origin explicitly.
+              referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen
+              onLoad={() => {
+                // Play commands sent before the player finished loading are
+                // dropped; replay it if the gallery is already on screen.
+                if (isInViewRef.current) {
+                  setTimeout(() => sendYoutubeCommand('playVideo'), 400);
+                }
+              }}
             />
           ) : (
           <>

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MEDIA_BUCKET } from '../../lib/mediaUpload';
+import { MEDIA_BUCKET, uploadMedia } from '../../lib/mediaUpload';
 import {
   Music,
   Upload,
@@ -68,6 +68,7 @@ export const AudioUploader: React.FC<AudioUploaderProps> = ({
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [urlInput, setUrlInput] = useState(currentUrl);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -145,19 +146,21 @@ export const AudioUploader: React.FC<AudioUploaderProps> = ({
 
     const cleanTitle = file.name.replace(/\.[^/.]+$/, '');
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      if (dataUrl) {
-        onChange(dataUrl, file.name, cleanTitle);
+    // Upload straight to storage and keep only its URL: a multi-MB song held
+    // inline (base64) overflowed the browser cache and bloated the settings.
+    setIsUploading(true);
+    onShowToast(`Mengunggah "${file.name}" (${sizeInMB.toFixed(1)} MB)... ⏳`);
+    uploadMedia(file, file.name)
+      .then((url) => {
+        onChange(url, file.name, cleanTitle);
         setIsPlaying(false);
-        onShowToast(`File MP3 "${file.name}" (${sizeInMB.toFixed(1)} MB) berhasil dimuat! 🎵`);
-      }
-    };
-    reader.onerror = () => {
-      onShowToast('Gagal membaca file MP3.');
-    };
-    reader.readAsDataURL(file);
+        onShowToast(`Lagu "${file.name}" berhasil diunggah! Jangan lupa simpan. 🎵`);
+      })
+      .catch((err) => {
+        console.error('[audio] upload failed', err);
+        onShowToast('Gagal mengunggah file MP3. Periksa koneksi lalu coba lagi.');
+      })
+      .finally(() => setIsUploading(false));
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -362,8 +365,11 @@ export const AudioUploader: React.FC<AudioUploaderProps> = ({
             }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            className={`rounded-2xl p-6 border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-2 text-center ${
+            onClick={() => !isUploading && fileInputRef.current?.click()}
+            aria-busy={isUploading}
+            className={`rounded-2xl p-6 border-2 border-dashed transition-all flex ${
+              isUploading ? 'cursor-wait opacity-70' : 'cursor-pointer'
+            } flex-col items-center justify-center gap-2 text-center ${
               isDragging
                 ? 'border-[#cc3a63] bg-[#fcecf0]'
                 : 'border-[#4a4238]/40 hover:border-[#cc3a63] bg-[#fdfaf5] hover:bg-[#fff9fa]'
@@ -381,8 +387,8 @@ export const AudioUploader: React.FC<AudioUploaderProps> = ({
               </p>
             </div>
             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-[#51582f] text-white text-[11px] font-bold shadow-xs mt-1">
-              <Upload className="w-3.5 h-3.5" />
-              Pilih File MP3
+              <Upload className={`w-3.5 h-3.5 ${isUploading ? 'animate-bounce' : ''}`} />
+              {isUploading ? 'Mengunggah...' : 'Pilih File MP3'}
             </span>
           </div>
 

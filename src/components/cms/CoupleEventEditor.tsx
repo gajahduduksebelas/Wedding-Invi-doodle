@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import { Heart, Calendar, Clock, MapPin, Music, Sparkles, Save, RotateCcw, Upload, Crop, Video, Eye, EyeOff } from 'lucide-react';
 import { CoupleData, EventDetail } from '../../types';
 import { COUPLE_DATA, EVENTS_DATA } from '../../data/weddingData';
-import { ImageCropperModal } from './ImageCropperModal';
+import { ImageCropperModal, PHOTO_ASPECTS } from './ImageCropperModal';
 import { AudioUploader } from './AudioUploader';
+import { useDraftReporter } from '../../lib/useDraftReporter';
 
 interface CoupleEventEditorProps {
   couple: CoupleData;
   events: EventDetail[];
   onSave: (newCouple: CoupleData, newEvents: EventDetail[]) => void;
   onShowToast: (message: string) => void;
+  onDraftChange?: (draft: { couple: CoupleData; events: EventDetail[] } | null) => void;
 }
 
 export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
@@ -17,9 +19,11 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
   events,
   onSave,
   onShowToast,
+  onDraftChange,
 }) => {
   const [formData, setFormData] = useState<CoupleData>(couple);
   const [eventsData, setEventsData] = useState<EventDetail[]>(events);
+  useDraftReporter({ couple: formData, events: eventsData }, { couple, events }, onDraftChange);
   const [cropperOpen, setCropperOpen] = useState(false);
   const [cropperTarget, setCropperTarget] = useState<'groom' | 'bride'>('groom');
 
@@ -201,7 +205,7 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-[11px] font-bold text-[#7a7065] block uppercase">
-                Foto Mempelai Pria (Avatar)
+                Foto Mempelai Pria (4:3)
               </label>
               <button
                 type="button"
@@ -217,7 +221,7 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
               <img
                 src={formData.groom.image || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300'}
                 alt="Groom avatar"
-                className="w-14 h-14 rounded-full object-cover border-2 border-[#4a4238] shadow-sm shrink-0"
+                className="w-24 aspect-[4/3] rounded-[12px] object-cover border-2 border-[#181818] shadow-sm shrink-0"
               />
               <div className="flex-1 min-w-0">
                 <input
@@ -323,7 +327,7 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-[11px] font-bold text-[#7a7065] block uppercase">
-                Foto Mempelai Wanita (Avatar)
+                Foto Mempelai Wanita (4:3)
               </label>
               <button
                 type="button"
@@ -339,7 +343,7 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
               <img
                 src={formData.bride.image || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300'}
                 alt="Bride avatar"
-                className="w-14 h-14 rounded-full object-cover border-2 border-[#4a4238] shadow-sm shrink-0"
+                className="w-24 aspect-[4/3] rounded-[12px] object-cover border-2 border-[#181818] shadow-sm shrink-0"
               />
               <div className="flex-1 min-w-0">
                 <input
@@ -758,11 +762,12 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
         onClose={() => setCropperOpen(false)}
         initialImage={cropperTarget === 'groom' ? formData.groom.image : formData.bride.image}
         onCropComplete={handlePersonCropComplete}
-        targetAspectRatio="1:1"
+        targetAspectRatio={PHOTO_ASPECTS.couple}
+        previewLabel={cropperTarget === 'groom' ? 'Kartu "The Groom"' : 'Kartu "The Bride"'}
         title={
           cropperTarget === 'groom'
-            ? 'Upload & Crop Foto Pengantin Pria (1:1)'
-            : 'Upload & Crop Foto Pengantin Wanita (1:1)'
+            ? 'Upload & Crop Foto Pengantin Pria'
+            : 'Upload & Crop Foto Pengantin Wanita'
         }
       />
     </form>

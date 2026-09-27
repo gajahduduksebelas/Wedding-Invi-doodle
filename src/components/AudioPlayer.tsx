@@ -1,5 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+export const BACKGROUND_MUSIC_ID = 'backgroundMusic';
+
+/**
+ * iOS/Safari only allow audio that starts synchronously inside a tap handler;
+ * starting it later from an effect is blocked. Call this from the click
+ * handler itself (the effect below still keeps state in sync).
+ */
+export const startBackgroundMusicFromGesture = () => {
+  const audio = document.getElementById(BACKGROUND_MUSIC_ID) as HTMLAudioElement | null;
+  audio?.play().catch(() => {});
+};
+
 interface AudioPlayerProps {
   audioUrl: string;
   isPlaying: boolean;
@@ -94,7 +106,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       audio.pause();
       stopRomanticSynth();
     }
-  }, [isPlaying]);
+    // audioUrl: a new song (e.g. loaded from the database after the page
+    // opened) resets the element, so playback has to be started again.
+  }, [isPlaying, audioUrl]);
 
   useEffect(() => {
     return () => {
@@ -105,6 +119,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   return (
     <>
       <audio
+        id={BACKGROUND_MUSIC_ID}
         ref={audioRef}
         src={audioUrl || 'https://dev.janjiharmoni.id/themes/cute-doodle/music.mp3'}
         loop

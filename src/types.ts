@@ -111,3 +111,6 @@ export interface AppSettings {
   photos: GalleryPhoto[];
   giftAddress: string;
 }
+
+// State of the CMS content save to the database, shown by the global save button.
+export type SaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
