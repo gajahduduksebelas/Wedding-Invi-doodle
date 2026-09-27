@@ -36,6 +36,7 @@ import { GiftsEditor } from './GiftsEditor';
 import { GalleryEditor } from './GalleryEditor';
 import { RsvpManager } from './RsvpManager';
 import { PasswordManager } from './PasswordManager';
+import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 
 type CmsTabId = 'wa-blaster' | 'couple-event' | 'gallery' | 'video' | 'gifts' | 'rsvp' | 'password';
 
@@ -119,14 +120,14 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
     );
   };
 
-  const handleSaveNewPassword = (e: React.FormEvent) => {
+  const handleSaveNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPassword.trim()) {
       setPasswordError('Password tidak boleh kosong.');
       return;
     }
-    if (newPassword.trim().length < 4) {
-      setPasswordError('Password minimal 4 karakter.');
+    if (newPassword.trim().length < 6) {
+      setPasswordError('Password minimal 6 karakter (persyaratan Supabase Auth).');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -134,9 +135,17 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
       return;
     }
 
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('wedding_cms_password', newPassword.trim());
+    if (!isSupabaseConfigured || !supabase) {
+      setPasswordError('Supabase belum dikonfigurasi — tidak dapat mengubah kata sandi.');
+      return;
     }
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword.trim() });
+    if (error) {
+      setPasswordError(error.message);
+      return;
+    }
+
     setIsPasswordModalOpen(false);
     setNewPassword('');
     setConfirmPassword('');
@@ -146,10 +155,6 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
 
   const handleLogout = () => {
     if (confirm('Kunci CMS dan keluar ke halaman undangan?')) {
-      if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('wedding_cms_authenticated');
-        localStorage.removeItem('wedding_cms_authenticated');
-      }
       if (onLogout) {
         onLogout();
       } else {

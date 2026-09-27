@@ -14,6 +14,7 @@ import { BottomNavigation } from './components/BottomNavigation';
 import { AudioPlayer } from './components/AudioPlayer';
 import { Toast } from './components/Toast';
 import { CmsDashboard } from './components/cms/CmsDashboard';
+import { CmsAuthGate } from './components/cms/CmsAuthGate';
 import {
   COUPLE_DATA,
   EVENTS_DATA,
@@ -24,6 +25,7 @@ import {
   DEFAULT_GIFT_ADDRESS,
 } from './data/weddingData';
 import { INITIAL_WA_GUESTS } from './data/whatsappData';
+import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
 import {
   Wish,
   VideoConfig,
@@ -175,6 +177,32 @@ export default function App() {
     return INITIAL_WA_GUESTS;
   });
 
+  // Tracks whether initial data has loaded from Supabase (or we've confirmed
+  // we're in local-only mode), so we don't overwrite the database with
+  // default/empty state before the real data has arrived.
+  const [isDataReady, setIsDataReady] = useState(!isSupabaseConfigured);
+
+  // CMS auth state — backed by a real Supabase session, not a client-side
+  // password check. If Supabase isn't configured, the CMS is inaccessible
+  // rather than falling open, since there is no way to gate it securely.
+  const [isCmsAuthenticated, setIsCmsAuthenticated] = useState(false);
+  const [isCheckingCmsAuth, setIsCheckingCmsAuth] = useState(true);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) {
+      setIsCheckingCmsAuth(false);
+      return;
+    }
+    supabase.auth.getSession().then(({ data }) => {
+      setIsCmsAuthenticated(!!data.session);
+      setIsCheckingCmsAuth(false);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsCmsAuthenticated(!!session);
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
   // Guest name initialization for recipient (from URL query param or default)
   const [guestName, setGuestName] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -196,53 +224,130 @@ export default function App() {
     }
   }, [couple.groom.nickname, couple.bride.nickname]);
 
-  // Persistence to localStorage
+  // --- Initial load from Supabase (runs once) ---
+  // Fetches the shared settings row + wishes so every visitor sees the same
+  // CMS-edited content and RSVP list, instead of only their own browser's copy.
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('ahmad_siti_couple', JSON.stringify(couple));
-    }
+    if (!isSupabaseConfigured || !supabase) return;
+
+    let cancelled = false;
+
+    (async () => {
+      const [{ data: settingsRow }, { data: wishRows }, { data: waRows }] = await Promise.all([
+        supabase.from('site_settings').select('*').eq('id', 1).maybeSingle(),
+        supabase.from('wishes').select('*').order('created_at', { ascending: false }),
+        supabase.from('wa_guests').select('*').order('created_at', { ascending: false }),
+      ]);
+
+      if (cancelled) return;
+
+      if (settingsRow) {
+        if (settingsRow.couple && Object.keys(settingsRow.couple).length > 0) setCouple(settingsRow.couple);
+        if (settingsRow.events && settingsRow.events.length > 0) setEvents(settingsRow.events);
+        if (settingsRow.banks && settingsRow.banks.length > 0) setBanks(settingsRow.banks);
+        if (settingsRow.photos && settingsRow.photos.length > 0) setPhotos(settingsRow.photos);
+        if (settingsRow.video_config && Object.keys(settingsRow.video_config).length > 0)
+          setVideoConfig(settingsRow.video_config);
+        if (settingsRow.gift_address) setGiftAddress(settingsRow.gift_address);
+      }
+      if (wishRows) {
+        setWishes(
+          wishRows.map((w: any) => ({
+            id: w.id,
+            name: w.name,
+            status: w.status,
+            guestCount: w.guest_count,
+            message: w.message,
+            createdAt: w.created_at,
+          }))
+        );
+      }
+      if (waRows) {
+        setWaGuests(
+          waRows.map((g: any) => ({
+            id: g.id,
+            name: g.name,
+            phone: g.phone,
+            category: g.category,
+            session: g.session,
+            status: g.status,
+            sentAt: g.sent_at,
+            notes: g.notes,
+          }))
+        );
+      }
+
+      setIsDataReady(true);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // --- Write-through persistence ---
+  // Below: whenever the CMS changes couple/events/banks/photos/videoConfig/
+  // giftAddress, push the whole settings row to Supabase (if configured) so
+  // every visitor sees the update, and always mirror to localStorage as an
+  // offline cache / fallback for local-only mode.
+  const saveSettingsToSupabase = async (overrides: Record<string, unknown> = {}) => {
+    if (!isSupabaseConfigured || !supabase || !isDataReady) return;
+    await supabase.from('site_settings').upsert({
+      id: 1,
+      couple,
+      events,
+      banks,
+      photos,
+      video_config: videoConfig,
+      gift_address: giftAddress,
+      updated_at: new Date().toISOString(),
+      ...overrides,
+    });
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') localStorage.setItem('ahmad_siti_couple', JSON.stringify(couple));
+    saveSettingsToSupabase({ couple });
   }, [couple]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('ahmad_siti_events', JSON.stringify(events));
-    }
+    if (typeof window !== 'undefined') localStorage.setItem('ahmad_siti_events', JSON.stringify(events));
+    saveSettingsToSupabase({ events });
   }, [events]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined')
       localStorage.setItem('ahmad_siti_video_config', JSON.stringify(videoConfig));
-    }
+    saveSettingsToSupabase({ video_config: videoConfig });
   }, [videoConfig]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('ahmad_siti_banks', JSON.stringify(banks));
-    }
+    if (typeof window !== 'undefined') localStorage.setItem('ahmad_siti_banks', JSON.stringify(banks));
+    saveSettingsToSupabase({ banks });
   }, [banks]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('ahmad_siti_gift_address', giftAddress);
-    }
+    if (typeof window !== 'undefined') localStorage.setItem('ahmad_siti_gift_address', giftAddress);
+    saveSettingsToSupabase({ gift_address: giftAddress });
   }, [giftAddress]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('ahmad_siti_photos', JSON.stringify(photos));
-    }
+    if (typeof window !== 'undefined') localStorage.setItem('ahmad_siti_photos', JSON.stringify(photos));
+    saveSettingsToSupabase({ photos });
   }, [photos]);
 
+  // Wishes and wa_guests are NOT written here — they live in their own
+  // Supabase tables and are written directly at the point of change
+  // (handleAddWish for guest RSVPs, CMS handlers for admin edits/deletes),
+  // since batch-overwriting a table from local state doesn't scale and would
+  // clobber other guests' concurrent RSVP submissions.
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('ahmad_siti_wishes', JSON.stringify(wishes));
-    }
+    if (typeof window !== 'undefined') localStorage.setItem('ahmad_siti_wishes', JSON.stringify(wishes));
   }, [wishes]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined')
       localStorage.setItem('ahmad_siti_wa_guests', JSON.stringify(waGuests));
-    }
   }, [waGuests]);
 
   const showToast = (
@@ -301,8 +406,60 @@ export default function App() {
     }, 150);
   };
 
-  const handleAddWish = (newWish: Wish) => {
+  const handleAddWish = async (newWish: Wish) => {
+    // Optimistic UI update first
     setWishes((prev) => [newWish, ...prev]);
+
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.from('wishes').insert({
+        id: newWish.id,
+        name: newWish.name,
+        status: newWish.status,
+        guest_count: (newWish as any).guestCount ?? 1,
+        message: newWish.message,
+      });
+      if (error) console.error('[supabase] failed to save wish', error);
+    }
+  };
+
+  // CMS deletes/resets the wishes list by passing a new filtered array —
+  // diff against current state and mirror deletions to Supabase.
+  const handleUpdateWishes = async (newWishes: Wish[]) => {
+    if (isSupabaseConfigured && supabase) {
+      const removedIds = wishes
+        .filter((w) => !newWishes.some((nw) => nw.id === w.id))
+        .map((w) => w.id);
+      if (removedIds.length > 0) {
+        const { error } = await supabase.from('wishes').delete().in('id', removedIds);
+        if (error) console.error('[supabase] failed to delete wishes', error);
+      }
+    }
+    setWishes(newWishes);
+  };
+
+  // WA guest list is fully replaced on each CMS edit/import — small admin-only
+  // table, so a delete-all + bulk-insert keeps this simple and correct.
+  const handleUpdateWaGuests = async (newGuests: WhatsAppGuest[]) => {
+    if (isSupabaseConfigured && supabase) {
+      const { error: delError } = await supabase.from('wa_guests').delete().neq('id', '');
+      if (delError) console.error('[supabase] failed to clear wa_guests', delError);
+      if (newGuests.length > 0) {
+        const { error: insError } = await supabase.from('wa_guests').insert(
+          newGuests.map((g) => ({
+            id: g.id,
+            name: g.name,
+            phone: g.phone,
+            category: g.category,
+            session: g.session,
+            status: g.status,
+            sent_at: g.sentAt,
+            notes: g.notes,
+          }))
+        );
+        if (insError) console.error('[supabase] failed to save wa_guests', insError);
+      }
+    }
+    setWaGuests(newGuests);
   };
 
   // Observe active section for bottom navigation tab sync
@@ -400,6 +557,27 @@ export default function App() {
 
   // If viewing CMS Dashboard
   if (currentView === 'cms') {
+    if (isCheckingCmsAuth) {
+      return (
+        <div className="min-h-screen bg-[#F0F9FF] flex items-center justify-center text-[#64748B] text-sm">
+          Memeriksa sesi admin...
+        </div>
+      );
+    }
+
+    if (!isCmsAuthenticated) {
+      return (
+        <div className="min-h-screen bg-[#fff7eb]">
+          <Toast message={toast.message} isVisible={toast.isVisible} type={toast.type} />
+          <CmsAuthGate
+            onSuccess={() => setIsCmsAuthenticated(true)}
+            onBackToInvitation={handleSwitchToInvitation}
+            onShowToast={showToast}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-[#fff7eb]">
         <Toast message={toast.message} isVisible={toast.isVisible} type={toast.type} />
@@ -422,10 +600,15 @@ export default function App() {
             setGiftAddress(newAddress);
           }}
           onSavePhotos={(newPhotos) => setPhotos(newPhotos)}
-          onUpdateWishes={(newWishes) => setWishes(newWishes)}
-          onUpdateWaGuests={(newGuests) => setWaGuests(newGuests)}
+          onUpdateWishes={handleUpdateWishes}
+          onUpdateWaGuests={handleUpdateWaGuests}
           onSwitchToInvitation={handleSwitchToInvitation}
           onShowToast={showToast}
+          onLogout={async () => {
+            if (isSupabaseConfigured && supabase) await supabase.auth.signOut();
+            setIsCmsAuthenticated(false);
+            handleSwitchToInvitation();
+          }}
         />
       </div>
     );
