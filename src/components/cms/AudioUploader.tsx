@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { MEDIA_BUCKET } from '../../lib/mediaUpload';
 import {
   Music,
   Upload,
@@ -196,7 +197,9 @@ export const AudioUploader: React.FC<AudioUploaderProps> = ({
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  const isUploadedDataUrl = currentUrl.startsWith('data:audio');
+  // Uploads start as data: URLs and are moved to Supabase Storage on save.
+  const isUploadedDataUrl =
+    currentUrl.startsWith('data:audio') || currentUrl.includes(`/${MEDIA_BUCKET}/`);
   const activeDisplayName =
     currentFileName ||
     currentTitle ||

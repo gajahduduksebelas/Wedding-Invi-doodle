@@ -1,33 +1,54 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { GALLERY_PHOTOS } from '../data/weddingData';
-import { GalleryPhoto } from '../types';
+import { GALLERY_PHOTOS, extractYouTubeId } from '../data/weddingData';
+import { GalleryPhoto, VideoConfig } from '../types';
 import { PhotoLightbox } from './PhotoLightbox';
 import { DoodleBouquet, SectionHeading } from './DoodleIcons';
 import { Volume2, VolumeX } from 'lucide-react';
 
 interface GallerySectionProps {
   photos?: GalleryPhoto[];
-  videoUrl?: string;
+  video?: VideoConfig;
   onVideoActiveChange?: (isActive: boolean) => void;
 }
 
 export const GallerySection: React.FC<GallerySectionProps> = ({
   photos,
-  videoUrl,
+  video,
   onVideoActiveChange,
 }) => {
   const activePhotos = photos || GALLERY_PHOTOS;
   const [selectedPhoto, setSelectedPhoto] = useState<GalleryPhoto | null>(null);
   const sectionRef = useRef<HTMLElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const youtubeRef = useRef<HTMLIFrameElement | null>(null);
   const isInViewRef = useRef(false);
   const [isInView, setIsInView] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
 
+  // Same source resolution as the CMS VideoEditor: an explicit sourceType
+  // wins, otherwise a stored file/URL means 'upload', else YouTube.
+  const sourceType = video?.sourceType || (video?.directVideoUrl ? 'upload' : 'youtube');
+  const youtubeId = sourceType === 'youtube' ? extractYouTubeId(video?.youtubeUrl || '') : null;
   const galleryVideoSrc =
-    videoUrl || 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-bride-and-groom-holding-each-other-41484-large.mp4';
+    video?.directVideoUrl ||
+    video?.embedUrl ||
+    'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-bride-and-groom-holding-each-other-41484-large.mp4';
+  const shouldLoop = video?.loop !== false;
+
+  // YouTube iframe player is driven through its postMessage API (enablejsapi=1).
+  const sendYoutubeCommand = useCallback((func: string) => {
+    youtubeRef.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: 'command', func, args: [] }),
+      '*'
+    );
+  }, []);
 
   const playVideo = useCallback(() => {
+    if (youtubeId) {
+      sendYoutubeCommand('playVideo');
+      onVideoActiveChange?.(true);
+      return;
+    }
     const vid = videoRef.current;
     if (!vid) return;
 
@@ -47,15 +68,16 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
           })
           .catch(() => {});
       });
-  }, [onVideoActiveChange]);
+  }, [onVideoActiveChange, youtubeId, sendYoutubeCommand]);
 
   const pauseVideo = useCallback(() => {
+    if (youtubeId) sendYoutubeCommand('pauseVideo');
     const vid = videoRef.current;
     if (vid) {
       vid.pause();
     }
     onVideoActiveChange?.(false);
-  }, [onVideoActiveChange]);
+  }, [onVideoActiveChange, youtubeId, sendYoutubeCommand]);
 
   // Combined IntersectionObserver and container scroll detection
   useEffect(() => {
@@ -151,12 +173,29 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
 
         {/* Video Card Player with Auto Play / Pause on View */}
         <div className="w-full rounded-[24px] border-[2px] border-[#181818] shadow-[4px_4px_0px_#181818] overflow-hidden mb-3.5 bg-[#1C1A1A] relative aspect-video flex items-center justify-center">
+          {youtubeId ? (
+            <iframe
+              ref={youtubeRef}
+              key={youtubeId}
+              className="w-full h-full"
+              src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&rel=0${
+                shouldLoop ? `&loop=1&playlist=${youtubeId}` : ''
+              }`}
+              title={video?.title || 'Video Prewedding'}
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+            />
+          ) : (
+          <>
           <video
             ref={videoRef}
+            // key forces the element to reload when the CMS changes the source;
+            // <source> src changes alone are ignored by the browser.
+            key={galleryVideoSrc}
             className="w-full h-full object-cover"
             controls
             playsInline
-            loop
+            loop={shouldLoop}
             muted={isMuted}
             preload="auto"
             onPlay={() => {
@@ -169,7 +208,7 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
               }
             }}
           >
-            <source src={galleryVideoSrc} type="video/webm" />
+            <source src={galleryVideoSrc} />
             <source src="https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-bride-and-groom-holding-each-other-41484-large.mp4" type="video/mp4" />
             Browser Anda tidak mendukung tag video.
           </video>
@@ -200,6 +239,8 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
               </>
             )}
           </button>
+          </>
+          )}
         </div>
 
         {/* Photo Grid Preview: 6 selected photos in viewport with scrollable lightbox */}

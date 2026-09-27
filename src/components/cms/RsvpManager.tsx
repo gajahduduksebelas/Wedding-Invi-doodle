@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Wish } from '../../types';
 import { INITIAL_WISHES } from '../../data/weddingData';
+import { formatWishTime } from '../../lib/utils';
 
 interface RsvpManagerProps {
   wishes: Wish[];
@@ -222,7 +223,7 @@ export const RsvpManager: React.FC<RsvpManagerProps> = ({
                           <span className="font-mono">({w.guestCount} org)</span>
                         )}
                       </span>
-                      <span className="text-[10px] text-[#7a7065]">{w.createdAt}</span>
+                      <span className="text-[10px] text-[#7a7065]">{formatWishTime(w.createdAt)}</span>
                     </div>
 
                     <p className="text-[12px] text-[#524348] mt-1.5 leading-relaxed font-sans">
