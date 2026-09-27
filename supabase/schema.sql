@@ -18,6 +18,8 @@ create table if not exists site_settings (
   updated_at timestamptz not null default now(),
   constraint single_row check (id = 1)
 );
+-- Dress code (attire, color palette, colors to avoid, notes); added later.
+alter table site_settings add column if not exists dress_code jsonb not null default '{}'::jsonb;
 
 -- 2. Guest RSVPs / wishes — guests can insert their own, everyone can read, only admin can delete
 create table if not exists wishes (
