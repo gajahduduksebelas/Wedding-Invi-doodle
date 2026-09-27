@@ -22,19 +22,19 @@ export const AnnouncementSection: React.FC<AnnouncementSectionProps> = ({ couple
     <section
       id="home"
       aria-label="Pembuka Undangan"
-      className="w-full pt-8 pb-12 px-4 flex flex-col items-center justify-center relative overflow-hidden select-none"
+      className="mobile-snap-section w-full py-6 px-4 flex flex-col items-center justify-center relative overflow-hidden select-none"
     >
       {/* Top Left: Flying Bird Doodle */}
-      <div className="absolute top-2 left-2 z-10 pointer-events-none">
-        <DoodleFlyingBird className="w-16 sm:w-20 h-auto" />
+      <div className="absolute top-4 left-3 z-10 pointer-events-none">
+        <DoodleFlyingBird className="w-14 sm:w-18 h-auto" />
       </div>
 
       {/* Top Right: Heart Balloons Doodle */}
-      <div className="absolute top-12 right-1 z-10 pointer-events-none">
-        <DoodleHeartBalloons className="w-16 sm:w-20 h-auto" />
+      <div className="absolute top-10 right-2 z-10 pointer-events-none">
+        <DoodleHeartBalloons className="w-14 sm:w-18 h-auto" />
       </div>
 
-      <div className="w-full max-w-[380px] flex flex-col items-center text-center relative z-20 mt-2">
+      <div className="w-full max-w-[380px] flex flex-col items-center text-center relative z-20 my-auto animate-doodle-in">
         {/* DUEL HEART LOCKET WITH BOW AT TOP */}
         <DoodleDualHeartLocket
           groomImg={activeCouple.groom.image}
@@ -43,7 +43,7 @@ export const AnnouncementSection: React.FC<AnnouncementSectionProps> = ({ couple
         />
 
         {/* Display Title: KITA AKAN MENIKAH! */}
-        <div className="flex flex-col items-center mt-2">
+        <div className="flex flex-col items-center mt-1">
           <h1 className="font-delicious text-[44px] sm:text-[50px] leading-[0.95] text-[#181818] tracking-wide uppercase">
             KITA AKAN<br />MENIKAH!
           </h1>

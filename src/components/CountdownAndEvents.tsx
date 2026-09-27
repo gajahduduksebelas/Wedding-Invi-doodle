@@ -52,16 +52,16 @@ export const CountdownAndEvents: React.FC<CountdownAndEventsProps> = ({
   )}&location=${encodeURIComponent('Graha Manggala Siliwangi, Bandung')}`;
 
   return (
-    <div className="w-full flex flex-col items-center">
+    <>
       {/* ============================================================ */}
       {/* 1. SAVE THE DATE SECTION                                     */}
       {/* ============================================================ */}
       <section
         id="save-date"
         aria-label="Hitung Mundur"
-        className="w-full px-4 py-8 flex flex-col items-center justify-center select-none"
+        className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center select-none"
       >
-        <div className="w-full max-w-[400px] rounded-[28px] bg-[#EBD9A0] border-[2px] border-dashed border-[#181818] p-6 sm:p-7 relative">
+        <div className="w-full max-w-[400px] rounded-[28px] bg-[#EBD9A0] border-[2px] border-dashed border-[#181818] p-6 sm:p-7 relative my-auto animate-doodle-in">
           {/* Hanging Calendar Doodle on Top Right */}
           <div className="absolute -top-6 -right-2 z-10 pointer-events-none">
             <DoodleCalendar className="w-16 sm:w-18 h-auto" />
@@ -139,23 +139,23 @@ export const CountdownAndEvents: React.FC<CountdownAndEventsProps> = ({
       <section
         id="acara"
         aria-label="Detail Acara"
-        className="w-full px-4 py-8 flex flex-col items-center justify-center select-none"
+        className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center select-none"
       >
-        <div className="w-full max-w-[400px] flex flex-col items-center">
+        <div className="w-full max-w-[400px] flex flex-col items-center my-auto animate-doodle-in">
           <SectionHeading
             subheadline="Rangkaian prosesi"
             headline="DETAIL ACARA"
             subheadlineColor="#B4533C"
             headlineColor="#181818"
             underlineColor="#B4533C"
-            className="mb-2"
+            className="mb-1.5"
           />
 
-          <p className="text-[13px] text-stone-700 text-center max-w-[340px] leading-relaxed mb-6 font-normal">
+          <p className="text-[12.5px] text-stone-700 text-center max-w-[340px] leading-relaxed mb-4 font-normal">
             Kebahagiaan kami akan terasa lengkap dengan kehadiran Anda.
           </p>
 
-          <div className="w-full flex flex-col gap-5">
+          <div className="w-full flex flex-col gap-3.5">
             {activeEvents.map((evt, idx) => {
               const isAkad = evt.id === 'akad' || idx === 0;
               const eventNum = String(idx + 1).padStart(2, '0');
@@ -163,46 +163,46 @@ export const CountdownAndEvents: React.FC<CountdownAndEventsProps> = ({
               return (
                 <article
                   key={evt.id}
-                  className="w-full doodle-card p-6 sm:p-7 flex flex-col items-center text-center relative"
+                  className="w-full doodle-card p-4 sm:p-5 flex flex-col items-center text-center relative"
                 >
                   {/* Top-Left Order Number */}
-                  <span className="absolute top-5 left-6 text-[12px] font-mono font-medium text-stone-400">
+                  <span className="absolute top-4 left-5 text-[11px] font-mono font-medium text-stone-400">
                     {eventNum}
                   </span>
 
                   {/* Top-Right Hand-drawn Doodle */}
-                  <div className="absolute top-4 right-5 pointer-events-none">
+                  <div className="absolute top-3.5 right-4 pointer-events-none">
                     {isAkad ? (
-                      <DoodleToastGlasses className="w-12 sm:w-14 h-auto" />
+                      <DoodleToastGlasses className="w-10 sm:w-12 h-auto" />
                     ) : (
-                      <DoodleWeddingBells className="w-12 sm:w-14 h-auto" />
+                      <DoodleWeddingBells className="w-10 sm:w-12 h-auto" />
                     )}
                   </div>
 
                   {/* Title */}
-                  <h3 className="font-serif text-[22px] sm:text-[24px] font-bold text-[#181818] tracking-wider uppercase mt-4 mb-1">
+                  <h3 className="font-serif text-[18px] sm:text-[20px] font-bold text-[#181818] tracking-wider uppercase mt-1 mb-0.5">
                     {evt.title}
                   </h3>
 
                   {/* Date */}
-                  <span className="text-[14px] font-bold text-[#B4533C] block">
+                  <span className="text-[13px] font-bold text-[#B4533C] block">
                     {evt.date}
                   </span>
 
                   {/* Time */}
-                  <span className="text-[13.5px] font-bold text-[#181818] block mt-0.5">
+                  <span className="text-[12.5px] font-bold text-[#181818] block mt-0.5">
                     {evt.time}
                   </span>
 
                   {/* Divider line */}
-                  <div className="w-16 h-0.5 bg-[#181818]/15 my-3" />
+                  <div className="w-12 h-0.5 bg-[#181818]/15 my-2" />
 
                   {/* Location */}
-                  <strong className="text-[14.5px] font-bold text-[#181818] block">
+                  <strong className="text-[13.5px] font-bold text-[#181818] block">
                     {evt.locationName}
                   </strong>
 
-                  <p className="text-[12px] text-stone-600 mt-1 max-w-[300px] leading-relaxed">
+                  <p className="text-[11.5px] text-stone-600 mt-0.5 max-w-[300px] leading-relaxed">
                     {evt.address}
                   </p>
 
@@ -211,7 +211,7 @@ export const CountdownAndEvents: React.FC<CountdownAndEventsProps> = ({
                     href={evt.mapsUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-4 inline-flex items-center justify-center px-6 py-2 rounded-full bg-[#B4533C] text-white border-[2px] border-[#181818] shadow-[3.5px_3.5px_0px_#181818] text-[12.5px] font-bold hover:bg-[#a04630] active:translate-y-0.5 transition-all cursor-pointer"
+                    className="mt-3 inline-flex items-center justify-center px-5 py-1.5 rounded-full bg-[#B4533C] text-white border-[2px] border-[#181818] shadow-[3px_3px_0px_#181818] text-[12px] font-bold hover:bg-[#a04630] active:translate-y-0.5 transition-all cursor-pointer"
                   >
                     <span>Lihat Lokasi</span>
                   </a>
@@ -221,6 +221,6 @@ export const CountdownAndEvents: React.FC<CountdownAndEventsProps> = ({
           </div>
         </div>
       </section>
-    </div>
+    </>
   );
 };

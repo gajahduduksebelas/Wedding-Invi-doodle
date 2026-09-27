@@ -42,6 +42,7 @@ body {
   border: 2.5px solid #181818;
   border-radius: 28px;
   box-shadow: 6px 6px 0px #181818;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .doodle-card-sm {
@@ -68,6 +69,130 @@ body {
   box-shadow: 2px 2px 0px #181818;
 }
 
+/* 1 Scroll per Section (Snap Scroll Container) */
+.mobile-snap-container {
+  height: 100dvh;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-snap-section {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  min-height: 100dvh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Hand-drawn Underline Drawing Animation */
+@keyframes drawUnderline {
+  0% {
+    stroke-dashoffset: 120;
+    opacity: 0.3;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+.animate-draw-underline {
+  stroke-dasharray: 120;
+  stroke-dashoffset: 0;
+  animation: drawUnderline 0.9s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* Gentle, organic hand-drawn doodle float animations */
+@keyframes doodleFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(2deg);
+  }
+}
+
+.animate-doodle-float {
+  animation: doodleFloat 3.6s ease-in-out infinite;
+}
+
+@keyframes doodleFloatSlow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(-2.5deg);
+  }
+}
+
+.animate-doodle-slow {
+  animation: doodleFloatSlow 4.5s ease-in-out infinite;
+}
+
+@keyframes doodleBob {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-4px) scale(1.03);
+  }
+}
+
+.animate-doodle-bob {
+  animation: doodleBob 3s ease-in-out infinite;
+}
+
+@keyframes doodleSway {
+  0%, 100% {
+    transform: rotate(-3deg) translateY(0);
+  }
+  50% {
+    transform: rotate(3deg) translateY(-4px);
+  }
+}
+
+.animate-doodle-sway {
+  animation: doodleSway 4.2s ease-in-out infinite;
+}
+
+@keyframes doodlePulseSoft {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.88;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+}
+
+.animate-doodle-pulse {
+  animation: doodlePulseSoft 2.5s ease-in-out infinite;
+}
+
+/* Pop-in animation when entering viewport */
+@keyframes doodlePopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-doodle-in {
+  animation: doodlePopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
 /* Washi Tape styling */
 .cd-tape-pink {
   background-color: #f7c6ba;
@@ -77,52 +202,6 @@ body {
 .cd-tape-sage {
   background-color: #c6e2cb;
   border: 1px dashed rgba(78, 107, 71, 0.4);
-}
-
-/* Floating animation for doodles */
-@keyframes doodleFloat {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-7px) rotate(3deg); }
-}
-
-.animate-doodle-float {
-  animation: doodleFloat 3.8s ease-in-out infinite;
-}
-
-@keyframes doodleFloatSlow {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-9px) rotate(-3deg); }
-}
-
-.animate-doodle-slow {
-  animation: doodleFloatSlow 4.8s ease-in-out infinite;
-}
-
-@keyframes doodleBob {
-  0%, 100% { transform: translateY(0px) scale(1); }
-  50% { transform: translateY(-5px) scale(1.04); }
-}
-
-.animate-doodle-bob {
-  animation: doodleBob 3.2s ease-in-out infinite;
-}
-
-@keyframes doodleSway {
-  0%, 100% { transform: rotate(-4deg) translateY(0); }
-  50% { transform: rotate(4deg) translateY(-6px); }
-}
-
-.animate-doodle-sway {
-  animation: doodleSway 5s ease-in-out infinite;
-}
-
-@keyframes doodlePulseSoft {
-  0%, 100% { transform: scale(1); opacity: 0.85; }
-  50% { transform: scale(1.08); opacity: 1; }
-}
-
-.animate-doodle-pulse {
-  animation: doodlePulseSoft 2.8s ease-in-out infinite;
 }
 
 /* Spin slow for music disc */

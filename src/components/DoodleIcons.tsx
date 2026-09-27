@@ -9,7 +9,7 @@ export const DoodleUnderline: React.FC<{ color?: string; className?: string }> =
     viewBox="0 0 100 12"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={className}
+    className={`${className} overflow-visible`}
     aria-hidden="true"
   >
     <path
@@ -18,6 +18,7 @@ export const DoodleUnderline: React.FC<{ color?: string; className?: string }> =
       strokeWidth="2.8"
       strokeLinecap="round"
       strokeLinejoin="round"
+      className="animate-draw-underline"
     />
   </svg>
 );
@@ -69,7 +70,7 @@ export const DoodleFlyingBird: React.FC<{ className?: string }> = ({ className =
     viewBox="0 0 80 70"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={className}
+    className={`${className} animate-doodle-float`}
     aria-hidden="true"
   >
     {/* Body & Wings */}
@@ -120,7 +121,7 @@ export const DoodleHeartBalloons: React.FC<{ className?: string }> = ({ classNam
     viewBox="0 0 70 120"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={className}
+    className={`${className} animate-doodle-slow`}
     aria-hidden="true"
   >
     {/* Balloon 1 (Top Left) */}
@@ -314,7 +315,7 @@ export const DoodleDiamondRing: React.FC<{ className?: string }> = ({ className 
     viewBox="0 0 70 70"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={className}
+    className={`${className} animate-doodle-bob`}
     aria-hidden="true"
   >
     {/* Diamond Gem */}
@@ -359,7 +360,7 @@ export const DoodleBotanicalBranch: React.FC<{ className?: string }> = ({ classN
     viewBox="0 0 50 120"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={className}
+    className={`${className} animate-doodle-sway`}
     aria-hidden="true"
   >
     <path
@@ -408,7 +409,7 @@ export const DoodleCalendar: React.FC<{ className?: string }> = ({ className = '
     viewBox="0 0 70 70"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={className}
+    className={`${className} animate-doodle-bob`}
     aria-hidden="true"
   >
     {/* Calendar Page Outline */}
@@ -447,7 +448,7 @@ export const DoodleToastGlasses: React.FC<{ className?: string }> = ({ className
     viewBox="0 0 70 70"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={className}
+    className={`${className} animate-doodle-bob`}
     aria-hidden="true"
   >
     {/* Left Glass */}
@@ -489,7 +490,7 @@ export const DoodleWeddingBells: React.FC<{ className?: string }> = ({ className
     viewBox="0 0 70 70"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={className}
+    className={`${className} animate-doodle-sway`}
     aria-hidden="true"
   >
     {/* Ribbon Bow on top */}
@@ -560,7 +561,7 @@ export const DoodleBouquet: React.FC<{ className?: string }> = ({ className = 'w
     viewBox="0 0 70 80"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={className}
+    className={`${className} animate-doodle-bob`}
     aria-hidden="true"
   >
     {/* Flowers at top */}
@@ -589,7 +590,7 @@ export const DoodleOverlappingEnvelopes: React.FC<{ className?: string }> = ({ c
     viewBox="0 0 70 60"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={className}
+    className={`${className} animate-doodle-float`}
     aria-hidden="true"
   >
     {/* Back Envelope */}
@@ -616,7 +617,7 @@ export const DoodleKissingBirds: React.FC<{ className?: string }> = ({ className
     viewBox="0 0 100 55"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={className}
+    className={`${className} animate-doodle-bob`}
     aria-hidden="true"
   >
     {/* Left Bird */}
@@ -648,6 +649,7 @@ export const DoodleKissingBirds: React.FC<{ className?: string }> = ({ className
       d="M50 20C50 20 46 16 46 13C46 11 48 9.5 49.5 10.5C50 11 50 11.5 50 11.5C50 11.5 50 11 50.5 10.5C52 9.5 54 11 54 13C54 16 50 20 50 20Z"
       stroke="#181818"
       strokeWidth="1.8"
+      className="animate-doodle-pulse"
       fill="#B4533C"
     />
   </svg>
@@ -659,7 +661,7 @@ export const DoodleGiftBox: React.FC<{ className?: string }> = ({ className = 'w
     viewBox="0 0 70 70"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={className}
+    className={`${className} animate-doodle-slow`}
     aria-hidden="true"
   >
     {/* Box body */}

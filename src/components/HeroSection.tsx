@@ -43,29 +43,27 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     <section
       id="heroSection"
       aria-label="Cover Undangan"
-      className={`w-full bg-[#FAF7EE] relative flex flex-col items-center justify-center overflow-hidden transition-all duration-700 select-none ${
-        isOpened ? 'min-h-[90vh] py-8' : 'min-h-dvh h-dvh py-3 px-3.5'
-      }`}
+      className="mobile-snap-section w-full bg-[#FAF7EE] relative flex flex-col items-center justify-center overflow-hidden py-4 px-3.5 select-none"
     >
-      {/* Decorative Doodles in Background */}
+      {/* Decorative Doodles in Background with animations */}
       <div className="absolute top-3 left-3 z-10 pointer-events-none">
-        <DoodleFlyingBird className="w-16 sm:w-20 h-auto" />
+        <DoodleFlyingBird className="w-14 sm:w-18 h-auto" />
       </div>
       <div className="absolute top-4 right-3 z-10 pointer-events-none">
-        <DoodleHeartBalloons className="w-14 sm:w-18 h-auto" />
+        <DoodleHeartBalloons className="w-12 sm:w-16 h-auto" />
       </div>
-      <div className="absolute bottom-4 left-3 z-10 pointer-events-none opacity-85">
-        <DoodleDiamondRing className="w-14 sm:w-16 h-auto" />
+      <div className="absolute bottom-5 left-3 z-10 pointer-events-none opacity-85">
+        <DoodleDiamondRing className="w-12 sm:w-14 h-auto" />
       </div>
-      <div className="absolute bottom-4 right-3 z-10 pointer-events-none opacity-85">
-        <DoodleGiftBox className="w-14 sm:w-16 h-auto" />
+      <div className="absolute bottom-5 right-3 z-10 pointer-events-none opacity-85">
+        <DoodleGiftBox className="w-12 sm:w-14 h-auto" />
       </div>
 
       {/* Central Cover Invitation Card */}
-      <div className="w-full max-w-[390px] doodle-card p-6 sm:p-7 relative z-20 flex flex-col items-center text-center my-auto">
+      <div className="w-full max-w-[380px] doodle-card p-5 sm:p-7 relative z-20 flex flex-col items-center text-center my-auto animate-doodle-in">
         {/* Pink Washi Tape at Top Center */}
         <div
-          className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-32 h-6 cd-tape-pink -rotate-1 rounded-xs pointer-events-none"
+          className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-28 sm:w-32 h-5 sm:h-6 cd-tape-pink -rotate-1 rounded-xs pointer-events-none"
           aria-hidden="true"
         />
 
@@ -85,11 +83,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         </div>
 
         {/* Central Floral Envelope Graphic */}
-        <div className="relative my-3 sm:my-4 w-36 sm:w-40 h-28 sm:h-32 flex items-center justify-center">
+        <div className="relative my-2 sm:my-3 w-32 sm:w-36 h-24 sm:h-28 flex items-center justify-center">
           <img
             src={DOODLE_ASSETS.floralEnvelope}
             alt="Amplop Undangan"
-            className="w-full h-full object-contain filter drop-shadow-[0_4px_10px_rgba(24,24,24,0.15)]"
+            className="w-full h-full object-contain filter drop-shadow-[0_4px_10px_rgba(24,24,24,0.15)] animate-doodle-bob"
           />
         </div>
 
@@ -144,14 +142,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         <button
           onClick={onOpenInvitation}
           id="openInvitationBtn"
-          className="mt-4 inline-flex items-center justify-center gap-2.5 px-7 py-3 rounded-full bg-[#B4533C] text-white text-[15px] font-bold border-[2px] border-[#181818] shadow-[4px_4px_0px_#181818] hover:bg-[#a04630] active:translate-y-0.5 transition-all w-full cursor-pointer"
+          className="mt-3.5 inline-flex items-center justify-center gap-2.5 px-7 py-3 rounded-full bg-[#B4533C] text-white text-[15px] font-bold border-[2px] border-[#181818] shadow-[4px_4px_0px_#181818] hover:bg-[#a04630] active:translate-y-0.5 transition-all w-full cursor-pointer"
         >
           <Mail className="w-4.5 h-4.5" />
           <span>Buka Undangan</span>
         </button>
 
         {/* Music notice subtext */}
-        <p className="text-[11px] font-medium text-stone-600 mt-2.5 flex items-center justify-center gap-1.5">
+        <p className="text-[11px] font-medium text-stone-600 mt-2 flex items-center justify-center gap-1.5">
           <Music className="w-3.5 h-3.5 text-[#B4533C] animate-pulse" />
           <span>Putar musik latar otomatis saat dibuka</span>
         </p>

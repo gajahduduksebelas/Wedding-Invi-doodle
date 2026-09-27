@@ -16,10 +16,10 @@ export const LiveStreamSection: React.FC<LiveStreamSectionProps> = ({ config }) 
     <section
       id="stream"
       aria-label="Siaran Langsung"
-      className="w-full px-4 py-8 flex flex-col items-center justify-center select-none"
+      className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center select-none"
     >
       {/* Mint green backdrop container matching IMG_2713.PNG */}
-      <div className="w-full max-w-[400px] rounded-[30px] bg-[#D7E7DD] p-4 sm:p-5 relative pt-10">
+      <div className="w-full max-w-[400px] rounded-[30px] bg-[#D7E7DD] p-4 sm:p-5 relative pt-10 my-auto animate-doodle-in">
         {/* Overlapping Envelopes Doodle at top center */}
         <div className="absolute -top-6 left-6 sm:left-8 z-30 pointer-events-none">
           <DoodleOverlappingEnvelopes className="w-18 sm:w-20 h-auto" />

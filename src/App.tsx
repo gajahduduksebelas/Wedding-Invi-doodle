@@ -279,13 +279,17 @@ export default function App() {
   useEffect(() => {
     if (currentView !== 'invitation') return;
 
+    const scrollContainer = document.getElementById('invitationScrollContainer');
+
     const handleScroll = () => {
-      const scrollPos = window.scrollY + 250;
+      const scrollPos = (scrollContainer ? scrollContainer.scrollTop : window.scrollY) + 260;
       const gift = document.getElementById('gift');
-      const rsvp = document.getElementById('community') || document.getElementById('rsvp');
+      const rsvp = document.getElementById('rsvp');
+      const stream = document.getElementById('stream');
       const gallery = document.getElementById('gallery');
       const story = document.getElementById('story');
-      const acara = document.getElementById('acara') || document.getElementById('save-date');
+      const acara = document.getElementById('acara');
+      const saveDate = document.getElementById('save-date');
       const mempelai = document.getElementById('mempelai');
       const home = document.getElementById('home');
 
@@ -297,20 +301,23 @@ export default function App() {
         setActiveTab('gallery');
       } else if (story && scrollPos >= story.offsetTop) {
         setActiveTab('story');
-      } else if (acara && scrollPos >= acara.offsetTop) {
+      } else if ((acara && scrollPos >= acara.offsetTop) || (saveDate && scrollPos >= saveDate.offsetTop)) {
         setActiveTab('acara');
       } else if (mempelai && scrollPos >= mempelai.offsetTop) {
         setActiveTab('mempelai');
-      } else if (home && scrollPos >= home.offsetTop) {
-        setActiveTab('home');
       } else {
         setActiveTab('home');
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [currentView]);
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+      return () => scrollContainer.removeEventListener('scroll', handleScroll);
+    } else {
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      return () => window.removeEventListener('scroll', handleScroll);
+    }
+  }, [currentView, isOpened]);
 
   // Switch view handlers
   const handleSwitchToCms = () => {
@@ -396,7 +403,7 @@ export default function App() {
 
   // Otherwise, render the romantic, doodle-styled wedding invitation for invitees
   return (
-    <div className={`min-h-screen bg-[#FAF7EE] text-[#181818] flex flex-col items-center relative selection:bg-[#FBE8E6] selection:text-[#B4533C]`}>
+    <div className="h-dvh w-full bg-[#FAF7EE] text-[#181818] overflow-hidden flex flex-col items-center relative selection:bg-[#FBE8E6] selection:text-[#B4533C]">
       {/* Toast Alert */}
       <Toast message={toast.message} isVisible={toast.isVisible} type={toast.type} />
 
@@ -408,8 +415,12 @@ export default function App() {
         visibleButton={isOpened}
       />
 
-      {/* 1. Interactive Cover Section (Single Full Mobile Page Gate) */}
-      <div className="w-full min-h-dvh flex items-center justify-center bg-[#FAF7EE] overflow-hidden">
+      {/* 1 Scroll Each Section Container (Mobile Snap Container) */}
+      <div
+        id="invitationScrollContainer"
+        className="w-full h-full overflow-y-auto mobile-snap-container flex flex-col items-center"
+      >
+        {/* Cover / Hero Gate */}
         <HeroSection
           guestName={guestName}
           onUpdateGuestName={setGuestName}
@@ -417,12 +428,10 @@ export default function App() {
           couple={couple}
           isOpened={isOpened}
         />
-      </div>
 
-      {/* Main Single Column Container - revealed when invitation is opened */}
-      {isOpened && (
-        <>
-          <main className="w-full max-w-[460px] flex flex-col pb-20 pt-2 relative">
+        {/* Invitation Sections - rendered seamlessly once opened */}
+        {isOpened && (
+          <div className="w-full max-w-[460px] flex flex-col items-center">
             {/* 2. Hand-Drawn Locket Announcement: "KITA AKAN MENIKAH!" */}
             <AnnouncementSection
               onScrollNext={() => {
@@ -464,16 +473,18 @@ export default function App() {
               onShowToast={(msg) => showToast(msg, 'success')}
             />
 
-            {/* 11. Closing Thanks & Footer (#closing, #footer) */}
+            {/* 11. Closing Thanks & Footer (#closing) */}
             <ClosingSection couple={couple} />
-          </main>
+          </div>
+        )}
+      </div>
 
-          {/* Fixed Bottom Navigation Bar */}
-          <BottomNavigation
-            activeTab={activeTab}
-            onTabChange={(tabId) => setActiveTab(tabId)}
-          />
-        </>
+      {/* Fixed Bottom Navigation Bar */}
+      {isOpened && (
+        <BottomNavigation
+          activeTab={activeTab}
+          onTabChange={(tabId) => setActiveTab(tabId)}
+        />
       )}
     </div>
   );

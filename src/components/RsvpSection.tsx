@@ -46,34 +46,34 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({
   };
 
   return (
-    <div className="w-full flex flex-col items-center">
+    <>
       {/* ============================================================ */}
       {/* 1. RSVP SECTION                                              */}
       {/* ============================================================ */}
       <section
         id="rsvp"
         aria-label="Konfirmasi Kehadiran"
-        className="w-full px-4 py-8 flex flex-col items-center justify-center select-none"
+        className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center select-none"
       >
-        <div className="w-full max-w-[400px] flex flex-col items-center">
+        <div className="w-full max-w-[400px] flex flex-col items-center my-auto animate-doodle-in">
           <SectionHeading
             subheadline="Konfirmasi kehadiran"
             headline="RSVP"
             subheadlineColor="#B4533C"
             headlineColor="#181818"
             underlineColor="#B4533C"
-            className="mb-2"
+            className="mb-1.5"
           />
 
-          <p className="text-[13px] text-stone-700 text-center max-w-[340px] leading-relaxed mb-6 font-normal">
+          <p className="text-[12.5px] text-stone-700 text-center max-w-[340px] leading-relaxed mb-4 font-normal">
             Konfirmasi kehadiran Anda dengan mengisi form berikut
           </p>
 
-          <div className="w-full doodle-card p-6 sm:p-7 relative">
-            <form onSubmit={handleSubmit} className="w-full flex flex-col gap-3.5 text-left">
+          <div className="w-full doodle-card p-5 sm:p-6 relative">
+            <form onSubmit={handleSubmit} className="w-full flex flex-col gap-3 text-left">
               {/* Nama */}
               <div>
-                <label className="text-[12px] font-bold text-[#181818] block mb-1">
+                <label className="text-[11.5px] font-bold text-[#181818] block mb-0.5">
                   Nama
                 </label>
                 <input
@@ -83,13 +83,13 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({
                   value={rsvpName}
                   onChange={(e) => setRsvpName(e.target.value)}
                   placeholder="Masukkan nama lengkap Anda"
-                  className="w-full px-3.5 py-2.5 rounded-xl border-[2px] border-[#181818] bg-white text-[13px] font-medium text-[#181818] focus:outline-none focus:bg-[#FAF7EE] shadow-[2px_2px_0px_#181818]"
+                  className="w-full px-3 py-2 rounded-xl border-[2px] border-[#181818] bg-white text-[12.5px] font-medium text-[#181818] focus:outline-none focus:bg-[#FAF7EE] shadow-[2px_2px_0px_#181818]"
                 />
               </div>
 
               {/* Status Kehadiran */}
               <div>
-                <label className="text-[12px] font-bold text-[#181818] block mb-1">
+                <label className="text-[11.5px] font-bold text-[#181818] block mb-0.5">
                   Konfirmasi Kehadiran
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -98,10 +98,10 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({
                       key={st}
                       type="button"
                       onClick={() => setStatus(st)}
-                      className={`py-2 px-1 rounded-xl text-[11.5px] font-bold cursor-pointer transition-all border-[2px] border-[#181818] ${
+                      className={`py-1.5 px-1 rounded-xl text-[11px] font-bold cursor-pointer transition-all border-[1.5px] border-[#181818] ${
                         status === st
-                          ? 'bg-[#B4533C] text-white shadow-[3px_3px_0px_#181818]'
-                          : 'bg-[#FAF7EE] text-[#181818] hover:bg-[#efe8d8] shadow-[1.5px_1.5px_0px_#181818]'
+                          ? 'bg-[#B4533C] text-white shadow-[2.5px_2.5px_0px_#181818]'
+                          : 'bg-[#FAF7EE] text-[#181818] hover:bg-[#efe8d8] shadow-[1px_1px_0px_#181818]'
                       }`}
                     >
                       {st}
@@ -113,13 +113,13 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({
               {/* Jumlah Tamu */}
               {status === 'Hadir' && (
                 <div>
-                  <label className="text-[12px] font-bold text-[#181818] block mb-1">
+                  <label className="text-[11.5px] font-bold text-[#181818] block mb-0.5">
                     Jumlah Tamu
                   </label>
                   <select
                     value={guestCount}
                     onChange={(e) => setGuestCount(Number(e.target.value))}
-                    className="w-full px-3.5 py-2 rounded-xl border-[2px] border-[#181818] bg-white text-[13px] font-medium text-[#181818] focus:outline-none shadow-[2px_2px_0px_#181818]"
+                    className="w-full px-3 py-1.5 rounded-xl border-[2px] border-[#181818] bg-white text-[12.5px] font-medium text-[#181818] focus:outline-none shadow-[2px_2px_0px_#181818]"
                   >
                     <option value={1}>1 Orang</option>
                     <option value={2}>2 Orang</option>
@@ -131,7 +131,7 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({
 
               {/* Ucapan & Doa */}
               <div>
-                <label className="text-[12px] font-bold text-[#181818] block mb-1">
+                <label className="text-[11.5px] font-bold text-[#181818] block mb-0.5">
                   Ucapan &amp; Doa
                 </label>
                 <textarea
@@ -141,7 +141,7 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({
                   value={wishText}
                   onChange={(e) => setWishText(e.target.value)}
                   placeholder="Tuliskan ucapan dan doa restu..."
-                  className="w-full px-3.5 py-2 rounded-xl border-[2px] border-[#181818] bg-white text-[13px] font-medium text-[#181818] focus:outline-none focus:bg-[#FAF7EE] shadow-[2px_2px_0px_#181818] resize-none"
+                  className="w-full px-3 py-1.5 rounded-xl border-[2px] border-[#181818] bg-white text-[12.5px] font-medium text-[#181818] focus:outline-none focus:bg-[#FAF7EE] shadow-[2px_2px_0px_#181818] resize-none"
                 />
               </div>
 
@@ -149,9 +149,9 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 rounded-full bg-[#B4533C] text-white font-bold text-[13.5px] border-[2px] border-[#181818] shadow-[3.5px_3.5px_0px_#181818] hover:bg-[#a04630] active:translate-y-0.5 transition-all flex items-center justify-center gap-2 cursor-pointer mt-1"
+                className="w-full py-2.5 rounded-full bg-[#B4533C] text-white font-bold text-[13px] border-[2px] border-[#181818] shadow-[3px_3px_0px_#181818] hover:bg-[#a04630] active:translate-y-0.5 transition-all flex items-center justify-center gap-2 cursor-pointer mt-1"
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-3.5 h-3.5" />
                 <span>{isSubmitting ? 'Mengirim...' : 'Kirim RSVP & Ucapan'}</span>
               </button>
             </form>
@@ -165,38 +165,38 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({
       <section
         id="wishes"
         aria-label="Daftar Ucapan dan Doa"
-        className="w-full px-4 py-8 flex flex-col items-center justify-center select-none"
+        className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center select-none"
       >
-        <div className="w-full max-w-[400px] flex flex-col items-center">
+        <div className="w-full max-w-[400px] flex flex-col items-center my-auto animate-doodle-in">
           <SectionHeading
             subheadline="Doa terbaik"
             headline="UCAPAN DAN DOA"
             subheadlineColor="#3E5B3D"
             headlineColor="#181818"
             underlineColor="#3E5B3D"
-            className="mb-2"
+            className="mb-1.5"
           />
 
-          <p className="text-[13px] text-stone-700 text-center max-w-[340px] leading-relaxed mb-6 font-normal">
+          <p className="text-[12.5px] text-stone-700 text-center max-w-[340px] leading-relaxed mb-4 font-normal">
             Sampaikan ucapan &amp; doa terbaik anda
           </p>
 
-          <div className="w-full doodle-card p-5 sm:p-6 relative">
-            <div className="w-full flex flex-col gap-3 max-h-[380px] overflow-y-auto pr-1 text-left">
+          <div className="w-full doodle-card p-4 sm:p-5 relative">
+            <div className="w-full flex flex-col gap-2.5 max-h-[340px] overflow-y-auto pr-1 text-left">
               {wishes.map((w) => (
                 <div
                   key={w.id}
-                  className="p-3.5 rounded-2xl bg-[#FAF7EE] border-[1.5px] border-[#181818] shadow-[2.5px_2.5px_0px_#181818] flex flex-col gap-1"
+                  className="p-3 rounded-2xl bg-[#FAF7EE] border-[1.5px] border-[#181818] shadow-[2px_2px_0px_#181818] flex flex-col gap-0.5"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-[#B4533C]" />
-                      <strong className="text-[13px] text-[#181818] font-bold">
+                      <User className="w-3 h-3 text-[#B4533C]" />
+                      <strong className="text-[12px] text-[#181818] font-bold">
                         {w.name}
                       </strong>
                     </div>
                     <span
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border-[1.5px] border-[#181818] ${
+                      className={`px-2 py-0.5 rounded-full text-[9.5px] font-bold border-[1px] border-[#181818] ${
                         w.status === 'Hadir'
                           ? 'bg-[#DCE9DB] text-[#2C4233]'
                           : w.status === 'Tidak Hadir'
@@ -208,12 +208,12 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({
                     </span>
                   </div>
 
-                  <p className="text-[12.5px] text-[#24211e] leading-relaxed font-normal mt-0.5">
+                  <p className="text-[11.5px] text-[#24211e] leading-relaxed font-normal mt-0.5">
                     {w.message}
                   </p>
 
-                  <div className="flex items-center gap-1 text-[10px] text-stone-500 mt-1">
-                    <Clock className="w-3 h-3" />
+                  <div className="flex items-center gap-1 text-[9.5px] text-stone-500 mt-0.5">
+                    <Clock className="w-2.5 h-2.5" />
                     <span>{w.createdAt}</span>
                   </div>
                 </div>
@@ -222,6 +222,6 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({
           </div>
         </div>
       </section>
-    </div>
+    </>
   );
 };
