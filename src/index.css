@@ -78,6 +78,13 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+/* While a guest types (RSVP form, guest name) the phone keyboard shrinks the
+   visible area; mandatory snapping would keep yanking the page back to a
+   section edge, so it is switched off until the field loses focus. */
+.mobile-snap-container.is-typing {
+  scroll-snap-type: none;
+}
+
 .mobile-snap-section {
   scroll-snap-align: start;
   scroll-snap-stop: normal;
@@ -196,6 +203,126 @@ body {
 
 .animate-doodle-in {
   animation: doodlePopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Envelope opening (EnvelopeOpening.tsx): 2.3s total
+   0–0.5s  envelope drops in
+   0.4–1.1s flap swings open (goes behind the letter halfway)
+   0.9–1.6s letter rises out
+   1.6–2.3s everything zooms toward the reader and fades out */
+.envelope-overlay {
+  background: #FAF7EE radial-gradient(rgba(24, 24, 24, 0.07) 1.2px, transparent 1.3px) 0 0 / 18px 18px;
+  animation: envOverlay 2.3s ease forwards;
+}
+@keyframes envOverlay {
+  0%, 72% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+.envelope-stage {
+  perspective: 900px;
+  animation: envStage 2.3s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+}
+@keyframes envStage {
+  0% { transform: translateY(24px) scale(0.9); opacity: 0; }
+  20% { transform: translateY(0) scale(1); opacity: 1; }
+  70% { transform: translateY(40px) scale(1); }
+  100% { transform: translateY(80px) scale(1.7); }
+}
+.envelope {
+  position: relative;
+  width: 280px;
+  height: 190px;
+}
+.envelope-back {
+  position: absolute;
+  inset: 0;
+  background: #E2CFA6;
+  border: 3px solid #181818;
+  border-radius: 14px;
+  box-shadow: 6px 6px 0 #181818;
+}
+.envelope-letter {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  /* starts below the pocket's rim so no corner shows before the flap opens */
+  top: 46px;
+  height: 138px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 14px;
+  text-align: center;
+  background: #ffffff;
+  border: 2.5px solid #181818;
+  border-radius: 12px;
+  animation: envLetter 2.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes envLetter {
+  0%, 39% { transform: translateY(0); }
+  70%, 100% { transform: translateY(-128px); }
+}
+.envelope-front {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  overflow: visible;
+}
+.envelope-flap {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 132px;
+  z-index: 4;
+  transform-origin: top center;
+  animation: envFlap 2.3s cubic-bezier(0.45, 0, 0.25, 1) forwards;
+}
+@keyframes envFlap {
+  0%, 17% { transform: rotateX(0deg); z-index: 4; }
+  30% { z-index: 4; }
+  31% { z-index: 1; }
+  48%, 100% { transform: rotateX(180deg); z-index: 1; }
+}
+.envelope-seal {
+  position: absolute;
+  left: 50%;
+  top: 96px;
+  width: 36px;
+  height: 36px;
+  transform: translate(-50%, -50%);
+  animation: envSeal 2.3s ease forwards;
+}
+@keyframes envSeal {
+  0%, 15% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  24%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.3); }
+}
+
+/* Cover photo settles in like a print laid on the table */
+@keyframes coverIn {
+  0% { transform: scale(1.06); filter: saturate(0.85); }
+  100% { transform: scale(1); filter: saturate(1); }
+}
+.animate-cover-in {
+  animation: coverIn 1.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Paper grain laid over photos so they feel printed (design system: Paper texture) */
+.paper-grain {
+  position: relative;
+}
+.paper-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.09  0 0 0 0 0.09  0 0 0 0 0.09  0 0 0 0.9 0'/></filter><rect width='100%25' height='100%25' filter='url(%23g)'/></svg>");
+  mix-blend-mode: multiply;
+  opacity: 0.2;
 }
 
 /* Washi Tape styling */

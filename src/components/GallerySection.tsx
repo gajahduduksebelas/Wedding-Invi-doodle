@@ -34,35 +34,77 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
     video?.embedUrl ||
     DEFAULT_VIDEO_URL;
   const shouldLoop = video?.loop !== false;
-  // Browsers only autoplay muted video; guests can unmute in the player.
-  const startMuted = video?.muted !== false;
-
   // YouTube iframe player is driven through its postMessage API (enablejsapi=1).
-  const sendYoutubeCommand = useCallback((func: string) => {
-    youtubeRef.current?.contentWindow?.postMessage(
-      JSON.stringify({ event: 'command', func, args: [] }),
-      '*'
-    );
+  const sendYoutubeCommand = useCallback((func: string, args: unknown[] = []) => {
+    youtubeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), '*');
   }, []);
+
+  // Sound on as soon as the video plays. Most phones allow it because the
+  // guest already tapped "Buka Undangan"; where the browser still insists on
+  // a fresh tap (iOS), the video starts muted and the next tap anywhere on
+  // the page turns the sound on.
+  const unmuteOnNextTapRef = useRef<(() => void) | null>(null);
+  const armUnmuteOnNextTap = useCallback(() => {
+    if (unmuteOnNextTapRef.current) return;
+    const handler = () => {
+      document.removeEventListener('pointerdown', handler, true);
+      document.removeEventListener('keydown', handler, true);
+      unmuteOnNextTapRef.current = null;
+      if (!isInViewRef.current) return;
+      if (youtubeRef.current) {
+        sendYoutubeCommand('unMute');
+        sendYoutubeCommand('setVolume', [100]);
+        sendYoutubeCommand('playVideo');
+      }
+      const vid = videoRef.current;
+      if (vid) {
+        vid.muted = false;
+        setIsMuted(false);
+        vid.play().catch(() => {});
+      }
+    };
+    unmuteOnNextTapRef.current = handler;
+    document.addEventListener('pointerdown', handler, true);
+    document.addEventListener('keydown', handler, true);
+  }, [sendYoutubeCommand]);
+
+  useEffect(
+    () => () => {
+      const handler = unmuteOnNextTapRef.current;
+      if (handler) {
+        document.removeEventListener('pointerdown', handler, true);
+        document.removeEventListener('keydown', handler, true);
+      }
+    },
+    []
+  );
 
   const playVideo = useCallback(() => {
     if (youtubeId) {
       sendYoutubeCommand('playVideo');
+      sendYoutubeCommand('unMute');
+      sendYoutubeCommand('setVolume', [100]);
+      // YouTube can't report whether the unmute was allowed; the next tap
+      // re-applies it (harmless if the sound is already on).
+      armUnmuteOnNextTap();
       onVideoActiveChange?.(true);
       return;
     }
     const vid = videoRef.current;
     if (!vid) return;
 
+    vid.muted = false;
+    setIsMuted(false);
     vid
       .play()
       .then(() => {
         onVideoActiveChange?.(true);
       })
       .catch(() => {
-        // If unmuted autoplay blocked by browser policy, retry with muted
+        // Sound blocked by the browser: play muted now, unmute on next tap.
         vid.muted = true;
         setIsMuted(true);
+        armUnmuteOnNextTap();
         vid
           .play()
           .then(() => {
@@ -70,7 +112,7 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
           })
           .catch(() => {});
       });
-  }, [onVideoActiveChange, youtubeId, sendYoutubeCommand]);
+  }, [onVideoActiveChange, youtubeId, sendYoutubeCommand, armUnmuteOnNextTap]);
 
   const pauseVideo = useCallback(() => {
     if (youtubeId) sendYoutubeCommand('pauseVideo');
@@ -180,11 +222,10 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
               ref={youtubeRef}
               key={youtubeId}
               className="w-full h-full"
-              src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&rel=0${
-                startMuted ? '&mute=1' : ''
-              }${shouldLoop ? `&loop=1&playlist=${youtubeId}` : ''}&origin=${encodeURIComponent(
-                window.location.origin
-              )}`}
+              // Loaded muted so it is allowed to autoplay; playVideo turns the sound on.
+              src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&rel=0&mute=1${
+                shouldLoop ? `&loop=1&playlist=${youtubeId}` : ''
+              }&origin=${encodeURIComponent(window.location.origin)}`}
               title={video?.title || 'Video Prewedding'}
               allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
               // YouTube rejects embeds that arrive without a referrer
@@ -195,7 +236,7 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
                 // Play commands sent before the player finished loading are
                 // dropped; replay it if the gallery is already on screen.
                 if (isInViewRef.current) {
-                  setTimeout(() => sendYoutubeCommand('playVideo'), 400);
+                  setTimeout(playVideo, 400);
                 }
               }}
             />

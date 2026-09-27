@@ -86,6 +86,8 @@ export interface CoupleData {
   weddingCity: string;
   targetTimestamp: number;
   audioUrl: string;
+  /** Square photo at the top of the home section (cropped 1:1 in the CMS). */
+  coverImage?: string;
   audioFileName?: string;
   audioTitle?: string;
   loveStory?: LoveStoryItem[];

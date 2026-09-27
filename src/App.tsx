@@ -11,6 +11,7 @@ import { GiftSection } from './components/GiftSection';
 import { RsvpSection } from './components/RsvpSection';
 import { ClosingSection } from './components/ClosingSection';
 import { DressCodeSection } from './components/DressCodeSection';
+import { EnvelopeOpening } from './components/EnvelopeOpening';
 import { BottomNavigation } from './components/BottomNavigation';
 import { AudioPlayer, startBackgroundMusicFromGesture } from './components/AudioPlayer';
 import { Toast } from './components/Toast';
@@ -64,6 +65,9 @@ export default function App() {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isOpened, setIsOpened] = useState(false);
+  const [isEnvelopeOpening, setIsEnvelopeOpening] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const handleEnvelopeDone = React.useCallback(() => setIsEnvelopeOpening(false), []);
   const [activeTab, setActiveTab] = useState('invite');
   const wasPlayingBeforeVideoRef = React.useRef(false);
   const isVideoActiveRef = React.useRef(false);
@@ -401,6 +405,11 @@ export default function App() {
 
   const handleOpenInvitation = () => {
     startBackgroundMusicFromGesture();
+    // The envelope animation covers the screen while the invitation renders
+    // underneath; guests who prefer reduced motion go straight in.
+    const reduceMotion =
+      typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (!reduceMotion) setIsEnvelopeOpening(true);
     setIsOpened(true);
     wasPlayingBeforeVideoRef.current = true;
     if (!isPlaying) {
@@ -410,9 +419,10 @@ export default function App() {
     setTimeout(() => {
       const homeElement = document.getElementById('home');
       if (homeElement) {
-        homeElement.scrollIntoView({ behavior: 'smooth' });
+        // Jump while hidden behind the envelope; glide when there is none.
+        homeElement.scrollIntoView({ behavior: reduceMotion ? 'smooth' : 'instant' });
       }
-    }, 150);
+    }, 60);
   };
 
   // Returns whether the wish was saved, so the RSVP form can report failures.
@@ -510,6 +520,58 @@ export default function App() {
       }
     }
   };
+
+  // Typing on a phone: keep the focused field above the keyboard, turn off
+  // section snapping and hide the fixed bottom bar while the keyboard is up.
+  useEffect(() => {
+    if (currentView !== 'invitation') return;
+    const container = document.getElementById('invitationScrollContainer');
+    if (!container) return;
+
+    const isTextField = (el: EventTarget | null): el is HTMLElement =>
+      el instanceof HTMLTextAreaElement ||
+      (el instanceof HTMLInputElement && !['checkbox', 'radio', 'button', 'submit', 'range'].includes(el.type));
+
+    const keepVisible = () => {
+      const el = document.activeElement;
+      if (!isTextField(el) || !container.contains(el)) return;
+      const vv = window.visualViewport;
+      const visibleTop = (vv?.offsetTop ?? 0) + 16;
+      const visibleBottom = (vv ? vv.offsetTop + vv.height : window.innerHeight) - 16;
+      const rect = el.getBoundingClientRect();
+      if (rect.bottom > visibleBottom) {
+        container.scrollBy({ top: rect.bottom - visibleBottom + 24, behavior: 'smooth' });
+      } else if (rect.top < visibleTop) {
+        container.scrollBy({ top: rect.top - visibleTop - 24, behavior: 'smooth' });
+      }
+    };
+
+    let blurTimer: number | undefined;
+    const onFocusIn = (e: FocusEvent) => {
+      if (!isTextField(e.target)) return;
+      window.clearTimeout(blurTimer);
+      setIsTyping(true);
+      // Wait for the keyboard to finish sliding up before measuring.
+      window.setTimeout(keepVisible, 350);
+    };
+    const onFocusOut = (e: FocusEvent) => {
+      if (!isTextField(e.target)) return;
+      // Moving between fields fires focusout then focusin; don't flicker.
+      blurTimer = window.setTimeout(() => {
+        if (!isTextField(document.activeElement)) setIsTyping(false);
+      }, 120);
+    };
+
+    container.addEventListener('focusin', onFocusIn);
+    container.addEventListener('focusout', onFocusOut);
+    window.visualViewport?.addEventListener('resize', keepVisible);
+    return () => {
+      window.clearTimeout(blurTimer);
+      container.removeEventListener('focusin', onFocusIn);
+      container.removeEventListener('focusout', onFocusOut);
+      window.visualViewport?.removeEventListener('resize', keepVisible);
+    };
+  }, [currentView]);
 
   // Observe active section for bottom navigation tab sync
   useEffect(() => {
@@ -671,18 +733,28 @@ export default function App() {
       {/* Toast Alert */}
       <Toast message={toast.message} isVisible={toast.isVisible} type={toast.type} />
 
+      {isEnvelopeOpening && (
+        <EnvelopeOpening
+          groomName={couple.groom.nickname || 'Rendra'}
+          brideName={couple.bride.nickname || 'Naya'}
+          onDone={handleEnvelopeDone}
+        />
+      )}
+
       {/* Floating Audio Mini-FAB */}
       <AudioPlayer
         audioUrl={couple.audioUrl || COUPLE_DATA.audioUrl}
         isPlaying={isPlaying}
         onToggle={handleToggleMusic}
-        visibleButton={isOpened}
+        visibleButton={isOpened && !isTyping}
       />
 
       {/* 1 Scroll Each Section Container (Mobile Snap Container) */}
       <div
         id="invitationScrollContainer"
-        className="w-full h-full overflow-y-auto mobile-snap-container flex flex-col items-center"
+        className={`w-full h-full overflow-y-auto mobile-snap-container flex flex-col items-center ${
+          isTyping ? 'is-typing' : ''
+        }`}
       >
         {/* Cover / Hero Gate */}
         <HeroSection
@@ -751,7 +823,7 @@ export default function App() {
       </div>
 
       {/* Fixed Bottom Navigation Bar */}
-      {isOpened && (
+      {isOpened && !isTyping && (
         <BottomNavigation
           activeTab={activeTab}
           onTabChange={(tabId) => setActiveTab(tabId)}

@@ -416,6 +416,21 @@ def og_art():
     return svg(w, h, "".join(b), "Undangan pernikahan")
 
 
+def cover_art():
+    """Square (1:1) sample for the home cover photo; no drawn border, since
+    the invitation adds a torn-paper edge and grain on top."""
+    w = h = 600
+    b = [paper_bg(w, h, BLUSH_LIGHT)]
+    b.append(f'<circle cx="300" cy="330" r="220" fill="#FFFFFF" {LINE}/>')
+    for x, y, sc, pe in [(96, 150, 1.7, BLUSH), (150, 96, 1.2, BUTTER), (505, 170, 1.5, "#FFFFFF"), (455, 110, 1.1, SAGE)]:
+        b.append(flower(x, y, sc, pe, TERRA if pe == BUTTER else BUTTER))
+    b.append(leaf(70, 210, 1.5, -60) + leaf(540, 230, 1.5, 60))
+    b.append(scatter(w, h, 12, 91))
+    b.append(couple(300, 300, 1.85))
+    b.append(sprig(70, 600, 2.2, -12) + sprig(530, 600, 2.2, 12))
+    return svg(w, h, "".join(b), "Ilustrasi sampul: mempelai bergandengan tangan")
+
+
 SCENES = [
     scene_string_lights, scene_balloon, scene_picnic, scene_umbrella, scene_ring_box,
     scene_sunset, scene_coffee, scene_letter, scene_flower_frame, scene_calendar,
@@ -431,6 +446,7 @@ def main():
     (OUT / "couple" / "groom.svg").write_text(portrait("groom"))
     (OUT / "couple" / "bride.svg").write_text(portrait("bride"))
     (OUT / "og-art.svg").write_text(og_art())
+    (OUT / "couple" / "cover.svg").write_text(cover_art())
 
     for i, fn in enumerate(SCENES, start=1):
         body, title = fn()

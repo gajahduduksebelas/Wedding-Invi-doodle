@@ -20,6 +20,7 @@ export type CropAspect = '4:3' | '3:4' | '4:5' | '1:1' | '16:9';
 export const PHOTO_ASPECTS = {
   couple: '4:5', // CoupleSection portrait frame (aspect-[4/5])
   gallery: '3:4', // GallerySection grid tiles (aspect-[3/4])
+  cover: '1:1', // AnnouncementSection (#home) cover photo
 } as const satisfies Record<string, CropAspect>;
 
 interface ImageCropperModalProps {
