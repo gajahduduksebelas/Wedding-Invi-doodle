@@ -18,7 +18,7 @@ export type CropAspect = '4:3' | '3:4' | '4:5' | '1:1' | '16:9';
 // Aspect ratios of the frames the invitation actually shows photos in, so a
 // crop made in the CMS appears exactly as framed here.
 export const PHOTO_ASPECTS = {
-  couple: '4:3', // CoupleSection portrait frame (aspect-[4/3])
+  couple: '4:5', // CoupleSection portrait frame (aspect-[4/5])
   gallery: '3:4', // GallerySection grid tiles (aspect-[3/4])
 } as const satisfies Record<string, CropAspect>;
 

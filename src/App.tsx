@@ -680,7 +680,7 @@ export default function App() {
         {/* Invitation Sections - rendered seamlessly once opened */}
         {isOpened && (
           <div className="w-full max-w-[460px] flex flex-col items-center">
-            {/* 2. Hand-Drawn Locket Announcement: "KITA AKAN MENIKAH!" */}
+            {/* 2. Hand-Drawn Locket Announcement: "KAMI AKAN MENIKAH!" */}
             <AnnouncementSection
               onScrollNext={() => {
                 document.getElementById('quote')?.scrollIntoView({ behavior: 'smooth' });
@@ -707,8 +707,8 @@ export default function App() {
               onVideoActiveChange={handleVideoActiveChange}
             />
 
-            {/* 8. Live Streaming (#stream) */}
-            <LiveStreamSection config={couple.liveStream} />
+            {/* 8. Live Streaming (#stream) — hidden when turned off in the CMS */}
+            {couple.liveStream?.enabled !== false && <LiveStreamSection config={couple.liveStream} />}
 
             {/* 9. Amplop Digital & Kado (#gift) */}
             <GiftSection
