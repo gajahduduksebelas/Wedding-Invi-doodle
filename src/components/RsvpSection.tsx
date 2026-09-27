@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { Send, User, Clock } from 'lucide-react';
 import { Wish } from '../types';
 import { SectionHeading } from './DoodleIcons';
+import { formatWishTime } from '../lib/utils';
 
 interface RsvpSectionProps {
   wishes: Wish[];
   guestName: string;
-  onAddWish: (newWish: Wish) => void;
+  onAddWish: (newWish: Wish) => Promise<boolean>;
   onShowToast: (message: string) => void;
 }
 
@@ -37,12 +38,16 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({
       guestCount,
     };
 
-    setTimeout(() => {
-      onAddWish(newWish);
-      setWishText('');
+    onAddWish(newWish).then((saved) => {
       setIsSubmitting(false);
-      onShowToast('Terima kasih atas konfirmasi dan ucapan doanya! ✨');
-    }, 300);
+      if (saved) {
+        setWishText('');
+        onShowToast('Terima kasih atas konfirmasi dan ucapan doanya! ✨');
+      } else {
+        // Message is kept in the form so the guest can simply retry.
+        onShowToast('Maaf, ucapan gagal terkirim. Silakan coba lagi.');
+      }
+    });
   };
 
   return (
@@ -214,7 +219,7 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({
 
                   <div className="flex items-center gap-1 text-[9.5px] text-stone-500 mt-0.5">
                     <Clock className="w-2.5 h-2.5" />
-                    <span>{w.createdAt}</span>
+                    <span>{formatWishTime(w.createdAt)}</span>
                   </div>
                 </div>
               ))}

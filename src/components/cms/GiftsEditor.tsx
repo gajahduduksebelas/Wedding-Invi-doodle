@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useDraftReporter } from '../../lib/useDraftReporter';
 import { Landmark, Plus, Trash2, Save, RotateCcw, MapPin, Sparkles } from 'lucide-react';
 import { BankAccount } from '../../types';
 import { BANK_ACCOUNTS, DEFAULT_GIFT_ADDRESS } from '../../data/weddingData';
@@ -8,6 +9,7 @@ interface GiftsEditorProps {
   giftAddress: string;
   onSave: (newBanks: BankAccount[], newAddress: string) => void;
   onShowToast: (message: string) => void;
+  onDraftChange?: (draft: { banks: BankAccount[]; address: string } | null) => void;
 }
 
 export const GiftsEditor: React.FC<GiftsEditorProps> = ({
@@ -15,9 +17,11 @@ export const GiftsEditor: React.FC<GiftsEditorProps> = ({
   giftAddress,
   onSave,
   onShowToast,
+  onDraftChange,
 }) => {
   const [bankList, setBankList] = useState<BankAccount[]>(banks);
   const [address, setAddress] = useState<string>(giftAddress);
+  useDraftReporter({ banks: bankList, address }, { banks, address: giftAddress }, onDraftChange);
 
   const [newBankName, setNewBankName] = useState('');
   const [newAccountNumber, setNewAccountNumber] = useState('');

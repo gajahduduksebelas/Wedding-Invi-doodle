@@ -16,8 +16,8 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
     { id: 'acara', label: 'Acara', targetId: 'save-date', icon: Calendar },
     { id: 'story', label: 'Cerita', targetId: 'story', icon: BookOpen },
     { id: 'gallery', label: 'Galeri', targetId: 'gallery', icon: Image },
-    { id: 'rsvp', label: 'RSVP', targetId: 'rsvp', icon: MessageSquareHeart },
     { id: 'gift', label: 'Kado', targetId: 'gift', icon: Gift },
+    { id: 'rsvp', label: 'RSVP', targetId: 'rsvp', icon: MessageSquareHeart },
   ];
 
   const handleTabClick = (tabId: string, targetId: string) => {

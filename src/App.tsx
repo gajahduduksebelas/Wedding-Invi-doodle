@@ -11,7 +11,7 @@ import { GiftSection } from './components/GiftSection';
 import { RsvpSection } from './components/RsvpSection';
 import { ClosingSection } from './components/ClosingSection';
 import { BottomNavigation } from './components/BottomNavigation';
-import { AudioPlayer } from './components/AudioPlayer';
+import { AudioPlayer, startBackgroundMusicFromGesture } from './components/AudioPlayer';
 import { Toast } from './components/Toast';
 import { CmsDashboard } from './components/cms/CmsDashboard';
 import { CmsAuthGate } from './components/cms/CmsAuthGate';
@@ -26,6 +26,8 @@ import {
 } from './data/weddingData';
 import { INITIAL_WA_GUESTS } from './data/whatsappData';
 import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
+import { uploadInlineMedia } from './lib/mediaUpload';
+import { isUuid, newUuid, readCache, writeCache } from './lib/utils';
 import {
   Wish,
   VideoConfig,
@@ -34,6 +36,7 @@ import {
   BankAccount,
   GalleryPhoto,
   WhatsAppGuest,
+  SaveStatus,
 } from './types';
 
 export default function App() {
@@ -77,105 +80,22 @@ export default function App() {
     type: 'success',
   });
 
-  // 1. Couple Profile State
-  const [couple, setCouple] = useState<CoupleData>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ahmad_siti_couple');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {}
-      }
-    }
-    return COUPLE_DATA;
-  });
-
-  // 2. Events Schedule State
-  const [events, setEvents] = useState<EventDetail[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ahmad_siti_events');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {}
-      }
-    }
-    return EVENTS_DATA;
-  });
-
-  // 3. Video configuration
-  const [videoConfig, setVideoConfig] = useState<VideoConfig>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ahmad_siti_video_config');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {}
-      }
-    }
-    return DEFAULT_VIDEO_CONFIG;
-  });
-
-  // 4. Bank Accounts
-  const [banks, setBanks] = useState<BankAccount[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ahmad_siti_banks');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {}
-      }
-    }
-    return BANK_ACCOUNTS;
-  });
-
-  // 5. Physical Gift Address
-  const [giftAddress, setGiftAddress] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ahmad_siti_gift_address');
-      if (saved) return saved;
-    }
-    return DEFAULT_GIFT_ADDRESS;
-  });
-
-  // 6. Gallery Photos
-  const [photos, setPhotos] = useState<GalleryPhoto[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ahmad_siti_photos');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {}
-      }
-    }
-    return GALLERY_PHOTOS;
-  });
-
-  // 7. Wishes / RSVP
-  const [wishes, setWishes] = useState<Wish[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ahmad_siti_wishes');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {}
-      }
-    }
-    return INITIAL_WISHES;
-  });
-
-  // 8. WhatsApp Blaster Guest List
-  const [waGuests, setWaGuests] = useState<WhatsAppGuest[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ahmad_siti_wa_guests');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {}
-      }
-    }
-    return INITIAL_WA_GUESTS;
-  });
+  // Each slice starts from the localStorage cache (if any), then falls back
+  // to the defaults; Supabase data replaces it once loaded (see below).
+  const [couple, setCouple] = useState<CoupleData>(() => readCache('ahmad_siti_couple', COUPLE_DATA));
+  const [events, setEvents] = useState<EventDetail[]>(() => readCache('ahmad_siti_events', EVENTS_DATA));
+  const [videoConfig, setVideoConfig] = useState<VideoConfig>(() =>
+    readCache('ahmad_siti_video_config', DEFAULT_VIDEO_CONFIG)
+  );
+  const [banks, setBanks] = useState<BankAccount[]>(() => readCache('ahmad_siti_banks', BANK_ACCOUNTS));
+  const [giftAddress, setGiftAddress] = useState<string>(() =>
+    readCache('ahmad_siti_gift_address', DEFAULT_GIFT_ADDRESS, false)
+  );
+  const [photos, setPhotos] = useState<GalleryPhoto[]>(() => readCache('ahmad_siti_photos', GALLERY_PHOTOS));
+  const [wishes, setWishes] = useState<Wish[]>(() => readCache('ahmad_siti_wishes', INITIAL_WISHES));
+  const [waGuests, setWaGuests] = useState<WhatsAppGuest[]>(() =>
+    readCache('ahmad_siti_wa_guests', INITIAL_WA_GUESTS)
+  );
 
   // Tracks whether initial data has loaded from Supabase (or we've confirmed
   // we're in local-only mode), so we don't overwrite the database with
@@ -208,9 +128,9 @@ export default function App() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const toParam = params.get('to') || params.get('u') || params.get('guest');
-      if (toParam) {
-        return decodeURIComponent(toParam).replace(/\+/g, ' ');
-      }
+      // URLSearchParams already decodes %xx and '+'; decoding again would
+      // throw (and blank the page) on names containing a literal '%'.
+      if (toParam) return toParam;
     }
     return 'Budi Santoso & Partner';
   });
@@ -224,55 +144,78 @@ export default function App() {
     }
   }, [couple.groom.nickname, couple.bride.nickname]);
 
-  // --- Initial load from Supabase (runs once) ---
+  // --- Loading from Supabase ---
   // Fetches the shared settings row + wishes so every visitor sees the same
   // CMS-edited content and RSVP list, instead of only their own browser's copy.
+
+  // JSON of the settings as last loaded from / saved to Supabase. The save
+  // effect compares against it so loading data (or a guest's browser
+  // re-rendering it) never triggers a write back to the database.
+  const lastSyncedSettingsRef = React.useRef<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  // Bumped by the CMS "save all" button to retry a failed save right away.
+  const [saveRequest, setSaveRequest] = useState(0);
+
+  const mapWaGuestRow = (g: any): WhatsAppGuest => ({
+    id: g.id,
+    name: g.name,
+    phone: g.phone,
+    category: g.category,
+    session: g.session,
+    status: g.status,
+    sentAt: g.sent_at ?? undefined,
+    notes: g.notes ?? undefined,
+  });
+
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) return;
 
     let cancelled = false;
 
     (async () => {
-      const [{ data: settingsRow }, { data: wishRows }, { data: waRows }] = await Promise.all([
+      const [settingsRes, wishRes] = await Promise.all([
         supabase.from('site_settings').select('*').eq('id', 1).maybeSingle(),
         supabase.from('wishes').select('*').order('created_at', { ascending: false }),
-        supabase.from('wa_guests').select('*').order('created_at', { ascending: false }),
       ]);
 
       if (cancelled) return;
 
+      if (settingsRes.error) console.error('[supabase] failed to load settings', settingsRes.error);
+      if (wishRes.error) console.error('[supabase] failed to load wishes', wishRes.error);
+
+      const settingsRow = settingsRes.data;
       if (settingsRow) {
-        if (settingsRow.couple && Object.keys(settingsRow.couple).length > 0) setCouple(settingsRow.couple);
-        if (settingsRow.events && settingsRow.events.length > 0) setEvents(settingsRow.events);
-        if (settingsRow.banks && settingsRow.banks.length > 0) setBanks(settingsRow.banks);
-        if (settingsRow.photos && settingsRow.photos.length > 0) setPhotos(settingsRow.photos);
-        if (settingsRow.video_config && Object.keys(settingsRow.video_config).length > 0)
-          setVideoConfig(settingsRow.video_config);
-        if (settingsRow.gift_address) setGiftAddress(settingsRow.gift_address);
+        const loaded = {
+          couple: settingsRow.couple && Object.keys(settingsRow.couple).length > 0 ? settingsRow.couple : couple,
+          events: settingsRow.events?.length > 0 ? settingsRow.events : events,
+          banks: settingsRow.banks?.length > 0 ? settingsRow.banks : banks,
+          photos: settingsRow.photos?.length > 0 ? settingsRow.photos : photos,
+          video_config:
+            settingsRow.video_config && Object.keys(settingsRow.video_config).length > 0
+              ? settingsRow.video_config
+              : videoConfig,
+          gift_address: settingsRow.gift_address || giftAddress,
+        };
+        setCouple(loaded.couple);
+        setEvents(loaded.events);
+        setBanks(loaded.banks);
+        setPhotos(loaded.photos);
+        setVideoConfig(loaded.video_config);
+        setGiftAddress(loaded.gift_address);
+        // Only mark as synced when the row actually held real content; an
+        // empty seeded row should get populated by the first admin session.
+        const rowHasContent = settingsRow.couple && Object.keys(settingsRow.couple).length > 0;
+        if (rowHasContent) lastSyncedSettingsRef.current = JSON.stringify(loaded);
       }
-      if (wishRows) {
+      if (wishRes.data) {
         setWishes(
-          wishRows.map((w: any) => ({
+          wishRes.data.map((w: any) => ({
             id: w.id,
             name: w.name,
             status: w.status,
             guestCount: w.guest_count,
             message: w.message,
             createdAt: w.created_at,
-          }))
-        );
-      }
-      if (waRows) {
-        setWaGuests(
-          waRows.map((g: any) => ({
-            id: g.id,
-            name: g.name,
-            phone: g.phone,
-            category: g.category,
-            session: g.session,
-            status: g.status,
-            sentAt: g.sent_at,
-            notes: g.notes,
           }))
         );
       }
@@ -285,56 +228,107 @@ export default function App() {
     };
   }, []);
 
-  // --- Write-through persistence ---
-  // Below: whenever the CMS changes couple/events/banks/photos/videoConfig/
-  // giftAddress, push the whole settings row to Supabase (if configured) so
-  // every visitor sees the update, and always mirror to localStorage as an
-  // offline cache / fallback for local-only mode.
-  const saveSettingsToSupabase = async (overrides: Record<string, unknown> = {}) => {
-    if (!isSupabaseConfigured || !supabase || !isDataReady) return;
-    await supabase.from('site_settings').upsert({
-      id: 1,
+  // The WA guest list is admin-only under RLS, so it can only be read once the
+  // admin session exists — including when they log in after the page loaded.
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase || !isCmsAuthenticated) return;
+    let cancelled = false;
+    supabase
+      .from('wa_guests')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          console.error('[supabase] failed to load wa_guests', error);
+          return;
+        }
+        // An empty table on first use keeps the local list; it is written to
+        // the database on the admin's first edit.
+        if (data && data.length > 0) setWaGuests(data.map(mapWaGuestRow));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isCmsAuthenticated]);
+
+  // --- Settings persistence ---
+  // Mirror every change to localStorage (offline cache / local-only mode) and,
+  // for a logged-in admin, save the settings row to Supabase. Saves are
+  // debounced so typing in the CMS doesn't fire one request per keystroke, and
+  // done in a single effect so each write carries the latest value of every
+  // field. Guests never write here (RLS would reject it anyway).
+  useEffect(() => {
+    writeCache('ahmad_siti_couple', couple);
+    writeCache('ahmad_siti_events', events);
+    writeCache('ahmad_siti_video_config', videoConfig);
+    writeCache('ahmad_siti_banks', banks);
+    writeCache('ahmad_siti_gift_address', giftAddress);
+    writeCache('ahmad_siti_photos', photos);
+
+    if (!isSupabaseConfigured || !supabase || !isDataReady || !isCmsAuthenticated) return;
+
+    const settings = {
       couple,
       events,
       banks,
       photos,
       video_config: videoConfig,
       gift_address: giftAddress,
-      updated_at: new Date().toISOString(),
-      ...overrides,
-    });
-  };
+    };
+    if (JSON.stringify(settings) === lastSyncedSettingsRef.current) {
+      // An edit that was undone before its save ran is already in sync.
+      setSaveStatus((status) => (status === 'pending' ? 'saved' : status));
+      return;
+    }
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') localStorage.setItem('ahmad_siti_couple', JSON.stringify(couple));
-    saveSettingsToSupabase({ couple });
-  }, [couple]);
+    setSaveStatus('pending');
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setSaveStatus('saving');
+      let toSave = settings;
+      try {
+        toSave = await uploadInlineMedia(settings);
+      } catch (err) {
+        console.error('[supabase] media upload failed', err);
+        if (!cancelled) setSaveStatus('error');
+        showToast('⚠️ Gagal mengunggah media ke server. Coba lagi.', 'pause');
+        return;
+      }
+      if (cancelled) return;
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') localStorage.setItem('ahmad_siti_events', JSON.stringify(events));
-    saveSettingsToSupabase({ events });
-  }, [events]);
+      if (toSave !== settings) {
+        // Swap uploaded data: URLs for their Storage URLs; this re-runs the
+        // effect, which then saves the lightweight version.
+        setCouple(toSave.couple);
+        setEvents(toSave.events);
+        setBanks(toSave.banks);
+        setPhotos(toSave.photos);
+        setVideoConfig(toSave.video_config);
+        setGiftAddress(toSave.gift_address);
+        return;
+      }
 
-  useEffect(() => {
-    if (typeof window !== 'undefined')
-      localStorage.setItem('ahmad_siti_video_config', JSON.stringify(videoConfig));
-    saveSettingsToSupabase({ video_config: videoConfig });
-  }, [videoConfig]);
+      const { error } = await supabase!.from('site_settings').upsert({
+        id: 1,
+        ...settings,
+        updated_at: new Date().toISOString(),
+      });
+      if (error) {
+        console.error('[supabase] failed to save settings', error);
+        if (!cancelled) setSaveStatus('error');
+        showToast('⚠️ Gagal menyimpan perubahan ke server.', 'pause');
+        return;
+      }
+      lastSyncedSettingsRef.current = JSON.stringify(settings);
+      if (!cancelled) setSaveStatus('saved');
+    }, 700);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') localStorage.setItem('ahmad_siti_banks', JSON.stringify(banks));
-    saveSettingsToSupabase({ banks });
-  }, [banks]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') localStorage.setItem('ahmad_siti_gift_address', giftAddress);
-    saveSettingsToSupabase({ gift_address: giftAddress });
-  }, [giftAddress]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') localStorage.setItem('ahmad_siti_photos', JSON.stringify(photos));
-    saveSettingsToSupabase({ photos });
-  }, [photos]);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [couple, events, videoConfig, banks, giftAddress, photos, isDataReady, isCmsAuthenticated, saveRequest]);
 
   // Wishes and wa_guests are NOT written here — they live in their own
   // Supabase tables and are written directly at the point of change
@@ -342,12 +336,11 @@ export default function App() {
   // since batch-overwriting a table from local state doesn't scale and would
   // clobber other guests' concurrent RSVP submissions.
   useEffect(() => {
-    if (typeof window !== 'undefined') localStorage.setItem('ahmad_siti_wishes', JSON.stringify(wishes));
+    writeCache('ahmad_siti_wishes', wishes);
   }, [wishes]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined')
-      localStorage.setItem('ahmad_siti_wa_guests', JSON.stringify(waGuests));
+    writeCache('ahmad_siti_wa_guests', waGuests);
   }, [waGuests]);
 
   const showToast = (
@@ -366,6 +359,7 @@ export default function App() {
       wasPlayingBeforeVideoRef.current = false;
       showToast('⏸️ Musik Dijeda', 'pause');
     } else {
+      startBackgroundMusicFromGesture();
       setIsPlaying(true);
       wasPlayingBeforeVideoRef.current = true;
       showToast('🎵 Memutar Musik', 'music');
@@ -392,6 +386,7 @@ export default function App() {
   };
 
   const handleOpenInvitation = () => {
+    startBackgroundMusicFromGesture();
     setIsOpened(true);
     wasPlayingBeforeVideoRef.current = true;
     if (!isPlaying) {
@@ -406,62 +401,100 @@ export default function App() {
     }, 150);
   };
 
-  const handleAddWish = async (newWish: Wish) => {
+  // Returns whether the wish was saved, so the RSVP form can report failures.
+  const handleAddWish = async (newWish: Wish): Promise<boolean> => {
     // Optimistic UI update first
     setWishes((prev) => [newWish, ...prev]);
 
-    if (isSupabaseConfigured && supabase) {
-      // newWish.id is a local timestamp-based string (e.g. "w-1790519190199"),
-      // used only as a React key — the wishes table's id column is a real
-      // uuid, so we omit it here and let Postgres generate one.
-      const { error } = await supabase.from('wishes').insert({
+    if (!isSupabaseConfigured || !supabase) return true;
+
+    // newWish.id is a temporary local id used only as a React key — the
+    // wishes table's id column is a uuid generated by Postgres. Read the real
+    // id back so the admin can delete this wish without reloading.
+    const { data, error } = await supabase
+      .from('wishes')
+      .insert({
         name: newWish.name,
         status: newWish.status,
-        guest_count: (newWish as any).guestCount ?? 1,
+        guest_count: newWish.guestCount ?? 1,
         message: newWish.message,
-      });
-      if (error) console.error('[supabase] failed to save wish', error);
+      })
+      .select('id, created_at')
+      .single();
+
+    if (error || !data) {
+      console.error('[supabase] failed to save wish', error);
+      setWishes((prev) => prev.filter((w) => w.id !== newWish.id));
+      return false;
     }
+
+    setWishes((prev) =>
+      prev.map((w) => (w.id === newWish.id ? { ...w, id: data.id, createdAt: data.created_at } : w))
+    );
+    return true;
   };
 
   // CMS deletes/resets the wishes list by passing a new filtered array —
   // diff against current state and mirror deletions to Supabase.
   const handleUpdateWishes = async (newWishes: Wish[]) => {
     if (isSupabaseConfigured && supabase) {
+      // Only rows that exist in the database can be deleted there; the reset
+      // button's sample wishes (non-uuid ids) are shown locally only.
       const removedIds = wishes
         .filter((w) => !newWishes.some((nw) => nw.id === w.id))
-        .map((w) => w.id);
+        .map((w) => w.id)
+        .filter(isUuid);
       if (removedIds.length > 0) {
         const { error } = await supabase.from('wishes').delete().in('id', removedIds);
-        if (error) console.error('[supabase] failed to delete wishes', error);
+        if (error) {
+          console.error('[supabase] failed to delete wishes', error);
+          showToast('⚠️ Gagal menghapus ucapan dari server.', 'pause');
+          return;
+        }
       }
     }
     setWishes(newWishes);
   };
 
-  // WA guest list is fully replaced on each CMS edit/import — small admin-only
-  // table, so a delete-all + bulk-insert keeps this simple and correct.
+  // WA guest list: diff against the current list, delete removed rows and
+  // upsert the rest. Ids created in the browser (sample data, the add form,
+  // CSV import) aren't uuids, so they get one before being stored.
   const handleUpdateWaGuests = async (newGuests: WhatsAppGuest[]) => {
-    if (isSupabaseConfigured && supabase) {
-      const { error: delError } = await supabase.from('wa_guests').delete().neq('id', '');
-      if (delError) console.error('[supabase] failed to clear wa_guests', delError);
-      if (newGuests.length > 0) {
-        const { error: insError } = await supabase.from('wa_guests').insert(
-          newGuests.map((g) => ({
-            id: g.id,
-            name: g.name,
-            phone: g.phone,
-            category: g.category,
-            session: g.session,
-            status: g.status,
-            sent_at: g.sentAt,
-            notes: g.notes,
-          }))
-        );
-        if (insError) console.error('[supabase] failed to save wa_guests', insError);
+    const normalized = newGuests.map((g) => (isUuid(g.id) ? g : { ...g, id: newUuid() }));
+    const previous = waGuests;
+    setWaGuests(normalized);
+
+    if (!isSupabaseConfigured || !supabase) return;
+
+    const removedIds = previous
+      .map((g) => g.id)
+      .filter((id) => isUuid(id) && !normalized.some((g) => g.id === id));
+    if (removedIds.length > 0) {
+      const { error } = await supabase.from('wa_guests').delete().in('id', removedIds);
+      if (error) {
+        console.error('[supabase] failed to delete wa_guests', error);
+        showToast('⚠️ Gagal menghapus tamu dari server.', 'pause');
       }
     }
-    setWaGuests(newGuests);
+
+    if (normalized.length > 0) {
+      const { error } = await supabase.from('wa_guests').upsert(
+        normalized.map((g) => ({
+          id: g.id,
+          name: g.name,
+          phone: g.phone,
+          category: g.category,
+          session: g.session,
+          status: g.status,
+          sent_at: g.sentAt ?? null,
+          notes: g.notes ?? null,
+        }))
+      );
+      if (error) {
+        console.error('[supabase] failed to save wa_guests', error);
+        showToast('⚠️ Gagal menyimpan daftar tamu ke server.', 'pause');
+      }
+    }
   };
 
   // Observe active section for bottom navigation tab sync
@@ -471,32 +504,30 @@ export default function App() {
     const scrollContainer = document.getElementById('invitationScrollContainer');
 
     const handleScroll = () => {
-      const scrollPos = (scrollContainer ? scrollContainer.scrollTop : window.scrollY) + 260;
-      const gift = document.getElementById('gift');
-      const rsvp = document.getElementById('rsvp');
-      const stream = document.getElementById('stream');
-      const gallery = document.getElementById('gallery');
-      const story = document.getElementById('story');
-      const acara = document.getElementById('acara');
-      const saveDate = document.getElementById('save-date');
-      const mempelai = document.getElementById('mempelai');
-      const home = document.getElementById('home');
+      // Section tops in scroll-container coordinates. offsetTop can't be used
+      // directly: it is relative to the nearest positioned ancestor, not the
+      // scroll container, so it drifts from the real scroll position.
+      const containerTop = scrollContainer ? scrollContainer.getBoundingClientRect().top : 0;
+      const scrollTop = scrollContainer ? scrollContainer.scrollTop : window.scrollY;
+      const scrollPos = scrollTop + 260;
+      const topOf = (id: string) => {
+        const el = document.getElementById(id);
+        return el ? el.getBoundingClientRect().top - containerTop + scrollTop : Infinity;
+      };
 
-      if (gift && scrollPos >= gift.offsetTop) {
-        setActiveTab('gift');
-      } else if (rsvp && scrollPos >= rsvp.offsetTop) {
-        setActiveTab('rsvp');
-      } else if (gallery && scrollPos >= gallery.offsetTop) {
-        setActiveTab('gallery');
-      } else if (story && scrollPos >= story.offsetTop) {
-        setActiveTab('story');
-      } else if ((acara && scrollPos >= acara.offsetTop) || (saveDate && scrollPos >= saveDate.offsetTop)) {
-        setActiveTab('acara');
-      } else if (mempelai && scrollPos >= mempelai.offsetTop) {
-        setActiveTab('mempelai');
-      } else {
-        setActiveTab('home');
-      }
+      // Checked bottom-up in page order (… gallery, stream, gift, rsvp,
+      // closing): the first section already scrolled past wins. #stream has
+      // no tab of its own and stays under "Galeri".
+      const tabBySection: [string, string][] = [
+        ['rsvp', 'rsvp'],
+        ['gift', 'gift'],
+        ['gallery', 'gallery'],
+        ['story', 'story'],
+        ['save-date', 'acara'],
+        ['mempelai', 'mempelai'],
+      ];
+      const match = tabBySection.find(([sectionId]) => scrollPos >= topOf(sectionId));
+      setActiveTab(match ? match[1] : 'home');
     };
 
     if (scrollContainer) {
@@ -606,6 +637,8 @@ export default function App() {
           onUpdateWaGuests={handleUpdateWaGuests}
           onSwitchToInvitation={handleSwitchToInvitation}
           onShowToast={showToast}
+          saveStatus={saveStatus}
+          onRequestSave={() => setSaveRequest((n) => n + 1)}
           onLogout={async () => {
             if (isSupabaseConfigured && supabase) await supabase.auth.signOut();
             setIsCmsAuthenticated(false);
@@ -670,7 +703,7 @@ export default function App() {
             {/* 7. Gallery & Video (#gallery) */}
             <GallerySection
               photos={photos}
-              videoUrl={videoConfig.embedUrl}
+              video={videoConfig}
               onVideoActiveChange={handleVideoActiveChange}
             />
 

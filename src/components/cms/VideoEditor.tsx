@@ -14,33 +14,45 @@ import {
 } from 'lucide-react';
 import { VideoConfig } from '../../types';
 import { DEFAULT_VIDEO_CONFIG, PRESET_VIDEOS, extractYouTubeId } from '../../data/weddingData';
+import { uploadMedia } from '../../lib/mediaUpload';
+import { useDraftReporter } from '../../lib/useDraftReporter';
 
 interface VideoEditorProps {
   videoConfig: VideoConfig;
   onSave: (newConfig: VideoConfig) => void;
   onShowToast: (message: string) => void;
+  onDraftChange?: (draft: VideoConfig | null) => void;
 }
+
+// The editor fills in defaults for missing fields; the same shape is used to
+// tell whether the form differs from what is saved.
+const toVideoForm = (videoConfig: VideoConfig): VideoConfig => ({
+  sourceType: videoConfig.sourceType || (videoConfig.directVideoUrl ? 'upload' : 'youtube'),
+  youtubeUrl: videoConfig.youtubeUrl || '',
+  directVideoUrl: videoConfig.directVideoUrl || '',
+  videoFileName: videoConfig.videoFileName || '',
+  // ?? (not ||) so a deliberately emptied title stays empty after saving
+  // instead of reading as an unsaved change forever.
+  title: videoConfig.title ?? 'Kisah Kasih & Perjalanan Cinta',
+  subtitle:
+    videoConfig.subtitle ??
+    'Cuplikan momen manis, tawa, dan janji suci perjalanan cinta kami.',
+  autoplay: videoConfig.autoplay !== false,
+  muted: videoConfig.muted !== false,
+  loop: videoConfig.loop !== false,
+});
 
 export const VideoEditor: React.FC<VideoEditorProps> = ({
   videoConfig,
   onSave,
   onShowToast,
+  onDraftChange,
 }) => {
-  const [formData, setFormData] = useState<VideoConfig>({
-    sourceType: videoConfig.sourceType || (videoConfig.directVideoUrl ? 'upload' : 'youtube'),
-    youtubeUrl: videoConfig.youtubeUrl || '',
-    directVideoUrl: videoConfig.directVideoUrl || '',
-    videoFileName: videoConfig.videoFileName || '',
-    title: videoConfig.title || 'Kisah Kasih & Perjalanan Cinta',
-    subtitle:
-      videoConfig.subtitle ||
-      'Cuplikan momen manis, tawa, dan janji suci perjalanan cinta kami.',
-    autoplay: videoConfig.autoplay !== false,
-    muted: videoConfig.muted !== false,
-    loop: videoConfig.loop !== false,
-  });
+  const [formData, setFormData] = useState<VideoConfig>(() => toVideoForm(videoConfig));
+  useDraftReporter(formData, toVideoForm(videoConfig), onDraftChange);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
 
   const videoId = extractYouTubeId(formData.youtubeUrl);
 
@@ -66,19 +78,25 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
         }
       }
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
+      // Upload straight to storage; the page keeps only the file's URL.
+      setIsUploadingVideo(true);
+      onShowToast(`Mengunggah video "${file.name}" (${sizeMb.toFixed(1)} MB)... ⏳`);
+      uploadMedia(file, file.name)
+        .then((url) => {
           setFormData((prev) => ({
             ...prev,
             sourceType: 'upload',
-            directVideoUrl: event.target!.result as string,
+            directVideoUrl: url,
             videoFileName: file.name,
           }));
-          onShowToast(`Video "${file.name}" berhasil diupload! 🎬`);
-        }
-      };
-      reader.readAsDataURL(file);
+          onShowToast(`Video "${file.name}" berhasil diunggah! Jangan lupa simpan. 🎬`);
+        })
+        .catch((err) => {
+          console.error('[video] upload failed', err);
+          onShowToast('Gagal mengunggah video. Periksa koneksi lalu coba lagi.');
+        })
+        .finally(() => setIsUploadingVideo(false));
+      e.target.value = '';
     }
   };
 
@@ -284,9 +302,10 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-3 py-1.5 rounded-lg bg-white text-[#2b2620] text-[11px] font-bold border border-[#4a4238] hover:bg-[#edd9bf] cursor-pointer"
+                        disabled={isUploadingVideo}
+                        className="px-3 py-1.5 rounded-lg bg-white text-[#2b2620] text-[11px] font-bold border border-[#4a4238] hover:bg-[#edd9bf] cursor-pointer disabled:opacity-60 disabled:cursor-wait"
                       >
-                        Ganti Video
+                        {isUploadingVideo ? 'Mengunggah...' : 'Ganti Video'}
                       </button>
                       <button
                         type="button"
@@ -300,8 +319,11 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
                   </div>
                 ) : (
                   <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-[#a2ab73] bg-[#fdfaf5] hover:bg-[#f0f3e3] rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center gap-2.5 text-center cursor-pointer transition-colors"
+                    onClick={() => !isUploadingVideo && fileInputRef.current?.click()}
+                    aria-busy={isUploadingVideo}
+                    className={`border-2 border-dashed border-[#a2ab73] bg-[#fdfaf5] hover:bg-[#f0f3e3] rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center gap-2.5 text-center transition-colors ${
+                      isUploadingVideo ? 'cursor-wait opacity-70' : 'cursor-pointer'
+                    }`}
                   >
                     <div className="w-12 h-12 rounded-full bg-[#f0f3e3] border border-[#a2ab73] flex items-center justify-center text-[#51582f]">
                       <Upload className="w-6 h-6 animate-pulse" />
@@ -315,7 +337,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
                       </p>
                     </div>
                     <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white text-[#51582f] text-[11px] font-bold border border-[#a2ab73]">
-                      Pilih Video
+                      {isUploadingVideo ? 'Mengunggah...' : 'Pilih Video'}
                     </span>
                   </div>
                 )}
@@ -449,6 +471,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({
                 src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
                 title={formData.title || 'Wedding Video'}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                referrerPolicy="strict-origin-when-cross-origin"
                 allowFullScreen
                 className="w-full h-full border-0"
               />
