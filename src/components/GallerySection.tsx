@@ -1,24 +1,135 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GALLERY_PHOTOS } from '../data/weddingData';
 import { GalleryPhoto } from '../types';
 import { PhotoLightbox } from './PhotoLightbox';
 import { DoodleBouquet, SectionHeading } from './DoodleIcons';
-import { Play } from 'lucide-react';
+import { Volume2, VolumeX } from 'lucide-react';
 
 interface GallerySectionProps {
   photos?: GalleryPhoto[];
   videoUrl?: string;
+  onVideoActiveChange?: (isActive: boolean) => void;
 }
 
-export const GallerySection: React.FC<GallerySectionProps> = ({ photos, videoUrl }) => {
+export const GallerySection: React.FC<GallerySectionProps> = ({
+  photos,
+  videoUrl,
+  onVideoActiveChange,
+}) => {
   const activePhotos = photos || GALLERY_PHOTOS;
   const [selectedPhoto, setSelectedPhoto] = useState<GalleryPhoto | null>(null);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const isInViewRef = useRef(false);
+  const [isInView, setIsInView] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
 
-  const galleryVideoSrc = videoUrl || 'https://dev.janjiharmoni.id/themes/shared/gallery-video.webm';
+  const galleryVideoSrc =
+    videoUrl || 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-bride-and-groom-holding-each-other-41484-large.mp4';
+
+  const playVideo = useCallback(() => {
+    const vid = videoRef.current;
+    if (!vid) return;
+
+    vid
+      .play()
+      .then(() => {
+        onVideoActiveChange?.(true);
+      })
+      .catch(() => {
+        // If unmuted autoplay blocked by browser policy, retry with muted
+        vid.muted = true;
+        setIsMuted(true);
+        vid
+          .play()
+          .then(() => {
+            onVideoActiveChange?.(true);
+          })
+          .catch(() => {});
+      });
+  }, [onVideoActiveChange]);
+
+  const pauseVideo = useCallback(() => {
+    const vid = videoRef.current;
+    if (vid) {
+      vid.pause();
+    }
+    onVideoActiveChange?.(false);
+  }, [onVideoActiveChange]);
+
+  // Combined IntersectionObserver and container scroll detection
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const scrollContainer = document.getElementById('invitationScrollContainer');
+
+    const handleContainerScroll = () => {
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const containerRect = scrollContainer
+        ? scrollContainer.getBoundingClientRect()
+        : { top: 0, bottom: window.innerHeight };
+      const midPoint = (containerRect.top + containerRect.bottom) / 2;
+
+      // Section is active if container midpoint is inside the gallery section
+      const isFocused = rect.top <= midPoint && rect.bottom >= midPoint;
+
+      if (isFocused && !isInViewRef.current) {
+        isInViewRef.current = true;
+        setIsInView(true);
+        playVideo();
+      } else if (!isFocused && isInViewRef.current) {
+        isInViewRef.current = false;
+        setIsInView(false);
+        pauseVideo();
+      }
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.4) {
+            if (!isInViewRef.current) {
+              isInViewRef.current = true;
+              setIsInView(true);
+              playVideo();
+            }
+          } else if (!entry.isIntersecting || entry.intersectionRatio < 0.25) {
+            if (isInViewRef.current) {
+              isInViewRef.current = false;
+              setIsInView(false);
+              pauseVideo();
+            }
+          }
+        });
+      },
+      {
+        threshold: [0.1, 0.25, 0.4, 0.65],
+      }
+    );
+
+    observer.observe(el);
+
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleContainerScroll, { passive: true });
+    } else {
+      window.addEventListener('scroll', handleContainerScroll, { passive: true });
+    }
+
+    return () => {
+      observer.disconnect();
+      if (scrollContainer) {
+        scrollContainer.removeEventListener('scroll', handleContainerScroll);
+      } else {
+        window.removeEventListener('scroll', handleContainerScroll);
+      }
+    };
+  }, [playVideo, pauseVideo]);
 
   return (
     <section
+      ref={sectionRef}
       id="gallery"
       aria-label="Galeri Foto dan Video"
       className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative select-none"
@@ -38,30 +149,57 @@ export const GallerySection: React.FC<GallerySectionProps> = ({ photos, videoUrl
           className="mb-3.5"
         />
 
-        {/* Video Card Player */}
+        {/* Video Card Player with Auto Play / Pause on View */}
         <div className="w-full rounded-[24px] border-[2px] border-[#181818] shadow-[4px_4px_0px_#181818] overflow-hidden mb-3.5 bg-[#1C1A1A] relative aspect-video flex items-center justify-center">
-          {isVideoPlaying ? (
-            <video
-              className="w-full h-full object-cover"
-              controls
-              autoPlay
-              playsInline
-            >
-              <source src={galleryVideoSrc} type="video/webm" />
-              <source src="https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-bride-and-groom-holding-each-other-41484-large.mp4" type="video/mp4" />
-              Browser Anda tidak mendukung tag video.
-            </video>
-          ) : (
-            <div
-              onClick={() => setIsVideoPlaying(true)}
-              className="w-full h-full relative cursor-pointer group flex items-center justify-center bg-[#1C1A1A]"
-            >
-              {/* Play Button Icon */}
-              <div className="w-14 h-14 rounded-full bg-white/15 backdrop-blur-xs border-[2px] border-white/60 flex items-center justify-center text-white shadow-md group-hover:scale-110 group-hover:bg-white/25 transition-all">
-                <Play className="w-6 h-6 fill-white translate-x-0.5" />
-              </div>
-            </div>
-          )}
+          <video
+            ref={videoRef}
+            className="w-full h-full object-cover"
+            controls
+            playsInline
+            loop
+            muted={isMuted}
+            preload="auto"
+            onPlay={() => {
+              isInViewRef.current = true;
+              onVideoActiveChange?.(true);
+            }}
+            onPause={() => {
+              if (!isInViewRef.current) {
+                onVideoActiveChange?.(false);
+              }
+            }}
+          >
+            <source src={galleryVideoSrc} type="video/webm" />
+            <source src="https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-bride-and-groom-holding-each-other-41484-large.mp4" type="video/mp4" />
+            Browser Anda tidak mendukung tag video.
+          </video>
+
+          {/* Mute / Unmute Toggle Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (videoRef.current) {
+                const nextMuted = !videoRef.current.muted;
+                videoRef.current.muted = nextMuted;
+                setIsMuted(nextMuted);
+              }
+            }}
+            className="absolute top-2.5 right-2.5 z-20 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-xs border border-white/20 text-white text-[11px] font-medium flex items-center gap-1.5 hover:bg-black/80 transition-all cursor-pointer"
+            aria-label={isMuted ? 'Aktifkan suara video' : 'Bisukan suara video'}
+          >
+            {isMuted ? (
+              <>
+                <VolumeX className="w-3.5 h-3.5 text-stone-300" />
+                <span>Bisu</span>
+              </>
+            ) : (
+              <>
+                <Volume2 className="w-3.5 h-3.5 text-[#B4533C]" />
+                <span>Suara</span>
+              </>
+            )}
+          </button>
         </div>
 
         {/* Photo Grid Preview: 6 selected photos in viewport with scrollable lightbox */}

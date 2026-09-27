@@ -80,7 +80,7 @@ body {
 
 .mobile-snap-section {
   scroll-snap-align: start;
-  scroll-snap-stop: always;
+  scroll-snap-stop: normal;
   min-height: 100dvh;
   width: 100%;
   display: flex;
@@ -89,6 +89,11 @@ body {
   justify-content: center;
   position: relative;
   box-sizing: border-box;
+  padding-bottom: 5.5rem;
+}
+
+#heroSection.mobile-snap-section {
+  padding-bottom: 1.5rem;
 }
 
 /* Hand-drawn Underline Drawing Animation */

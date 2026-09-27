@@ -2,7 +2,7 @@ import React from 'react';
 import { COUPLE_DATA } from '../data/weddingData';
 import { CoupleData } from '../types';
 import { DoodleBotanicalBranch, SectionHeading } from './DoodleIcons';
-import { Camera } from 'lucide-react';
+import { Camera, Heart } from 'lucide-react';
 
 interface CoupleSectionProps {
   couple?: CoupleData;
@@ -15,10 +15,10 @@ export const CoupleSection: React.FC<CoupleSectionProps> = ({ couple }) => {
     <section
       id="mempelai"
       aria-label="Profil Mempelai"
-      className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative select-none"
+      className="mobile-snap-section w-full px-4 py-8 flex flex-col items-center justify-center relative select-none"
     >
       {/* Decorative Botanical Branch on Left Margin */}
-      <div className="absolute top-[32%] -left-1 sm:left-2 z-10 pointer-events-none opacity-85">
+      <div className="absolute top-[18%] -left-1 sm:left-2 z-10 pointer-events-none opacity-85">
         <DoodleBotanicalBranch className="w-10 sm:w-12 h-auto" />
       </div>
 
@@ -29,18 +29,19 @@ export const CoupleSection: React.FC<CoupleSectionProps> = ({ couple }) => {
           subheadlineColor="#B4533C"
           headlineColor="#181818"
           underlineColor="#B4533C"
-          className="mb-2"
+          className="mb-1.5"
         />
 
-        <p className="text-[12.5px] text-stone-700 text-center max-w-[340px] leading-relaxed mb-4 font-normal">
+        <p className="text-[12px] text-stone-700 text-center max-w-[340px] leading-relaxed mb-4 font-normal">
           Tanpa mengurangi rasa hormat, kami mengundang Bapak/Ibu/Saudara/i serta kerabat sekalian untuk menghadiri acara pernikahan kami.
         </p>
 
-        <div className="w-full flex flex-col gap-4">
+        {/* Groom & Bride Cards displayed individually without switcher */}
+        <div className="w-full flex flex-col items-center gap-3">
           {/* GROOM CARD */}
           <article className="w-full doodle-card p-4 sm:p-5 flex flex-col items-center text-center relative">
             {/* Portrait Frame with Washi Tape */}
-            <div className="relative w-full max-w-[240px] sm:max-w-[280px] aspect-[4/3] sm:aspect-[4/3.5] rounded-[18px] border-[2px] border-[#181818] overflow-hidden mb-2.5 bg-[#FAF7EE] shadow-xs">
+            <div className="relative w-full max-w-[200px] sm:max-w-[220px] aspect-[4/3] rounded-[18px] border-[2px] border-[#181818] overflow-hidden mb-2 bg-[#FAF7EE] shadow-xs">
               {/* Peach Washi Tape at Top Center */}
               <div
                 className="absolute -top-1 left-1/2 -translate-x-1/2 w-24 h-4.5 cd-tape-pink -rotate-1 rounded-xs z-10 pointer-events-none"
@@ -81,10 +82,18 @@ export const CoupleSection: React.FC<CoupleSectionProps> = ({ couple }) => {
             </a>
           </article>
 
+          {/* Romantic Ampersand & Heart Connector */}
+          <div className="flex items-center justify-center my-1">
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#EFE3C6] border-[1.5px] border-[#181818] shadow-[2px_2px_0px_#181818]">
+              <span className="font-delicious text-xl text-[#B4533C] font-bold leading-none">&</span>
+              <Heart className="w-3.5 h-3.5 fill-[#B4533C] text-[#B4533C]" />
+            </div>
+          </div>
+
           {/* BRIDE CARD */}
           <article className="w-full doodle-card p-4 sm:p-5 flex flex-col items-center text-center relative">
             {/* Portrait Frame with Washi Tape */}
-            <div className="relative w-full max-w-[240px] sm:max-w-[280px] aspect-[4/3] sm:aspect-[4/3.5] rounded-[18px] border-[2px] border-[#181818] overflow-hidden mb-2.5 bg-[#FAF7EE] shadow-xs">
+            <div className="relative w-full max-w-[200px] sm:max-w-[220px] aspect-[4/3] rounded-[18px] border-[2px] border-[#181818] overflow-hidden mb-2 bg-[#FAF7EE] shadow-xs">
               {/* Mint Washi Tape at Top Center */}
               <div
                 className="absolute -top-1 left-1/2 -translate-x-1/2 w-24 h-4.5 cd-tape-sage rotate-1 rounded-xs z-10 pointer-events-none"

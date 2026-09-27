@@ -57,6 +57,14 @@ export default function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isOpened, setIsOpened] = useState(false);
   const [activeTab, setActiveTab] = useState('invite');
+  const wasPlayingBeforeVideoRef = React.useRef(false);
+  const isVideoActiveRef = React.useRef(false);
+  const isPlayingRef = React.useRef(false);
+
+  // Sync isPlayingRef with isPlaying
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
   const [toast, setToast] = useState<{
     message: string;
     isVisible: boolean;
@@ -250,15 +258,37 @@ export default function App() {
   const handleToggleMusic = () => {
     if (isPlaying) {
       setIsPlaying(false);
+      wasPlayingBeforeVideoRef.current = false;
       showToast('⏸️ Musik Dijeda', 'pause');
     } else {
       setIsPlaying(true);
+      wasPlayingBeforeVideoRef.current = true;
       showToast('🎵 Memutar Musik', 'music');
+    }
+  };
+
+  // Autoplay video and pause music in Gallery section, resume when scrolling to other sections
+  const handleVideoActiveChange = (isVideoActive: boolean) => {
+    isVideoActiveRef.current = isVideoActive;
+    if (isVideoActive) {
+      if (isPlayingRef.current) {
+        wasPlayingBeforeVideoRef.current = true;
+        setIsPlaying(false);
+        showToast('🎬 Memutar Video (Musik Dijeda)', 'pause');
+      }
+    } else {
+      // User scrolled away to another section
+      if (wasPlayingBeforeVideoRef.current) {
+        setIsPlaying(true);
+        wasPlayingBeforeVideoRef.current = false;
+        showToast('🎵 Melanjutkan Musik', 'music');
+      }
     }
   };
 
   const handleOpenInvitation = () => {
     setIsOpened(true);
+    wasPlayingBeforeVideoRef.current = true;
     if (!isPlaying) {
       setIsPlaying(true);
       showToast('🎵 Memutar Musik', 'music');
@@ -453,7 +483,11 @@ export default function App() {
             <LoveStorySection stories={couple.loveStory} />
 
             {/* 7. Gallery & Video (#gallery) */}
-            <GallerySection photos={photos} videoUrl={videoConfig.embedUrl} />
+            <GallerySection
+              photos={photos}
+              videoUrl={videoConfig.embedUrl}
+              onVideoActiveChange={handleVideoActiveChange}
+            />
 
             {/* 8. Live Streaming (#stream) */}
             <LiveStreamSection config={couple.liveStream} />
