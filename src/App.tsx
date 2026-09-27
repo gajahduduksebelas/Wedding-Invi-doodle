@@ -138,8 +138,8 @@ export default function App() {
   // Dynamic document title based on bride and groom name
   useEffect(() => {
     if (typeof document !== 'undefined') {
-      const groomNick = couple.groom.nickname || 'Arga';
-      const brideNick = couple.bride.nickname || 'Kirana';
+      const groomNick = couple.groom.nickname || 'Rendra';
+      const brideNick = couple.bride.nickname || 'Naya';
       document.title = `${brideNick} & ${groomNick} — Undangan Pernikahan`;
     }
   }, [couple.groom.nickname, couple.bride.nickname]);
