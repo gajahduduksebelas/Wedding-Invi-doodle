@@ -231,16 +231,17 @@ def floral_envelope():
 
 
 def portrait(kind):
-    w, h = 400, 300
+    # 4:5, the ratio of the CoupleSection portrait frame.
+    w, h = 320, 400
     b = [paper_bg(w, h, BLUSH_LIGHT if kind == "bride" else SKY)]
-    b.append(f'<circle cx="200" cy="170" r="112" fill="{SAND if kind == "groom" else "#FFFFFF"}" {LINE}/>')
+    b.append(f'<circle cx="160" cy="190" r="122" fill="{SAND if kind == "groom" else "#FFFFFF"}" {LINE}/>')
     b.append(scatter(w, h, 9, 11 if kind == "groom" else 12))
-    b.append(sprig(60, 290, 1.3, -18) + sprig(340, 290, 1.3, 18))
+    b.append(sprig(34, 400, 1.35, -14) + sprig(286, 400, 1.35, 14))
     if kind == "groom":
-        b.append(groom(200, 150, 1.25))
+        b.append(groom(160, 176, 1.4))
     else:
-        b.append(bride(200, 150, 1.25))
-        b.append(bouquet(200, 262, 1.3))
+        b.append(bride(160, 176, 1.4))
+        b.append(bouquet(160, 326, 1.45))
     b.append(f'<rect x="1.5" y="1.5" width="{w - 3}" height="{h - 3}" fill="none" stroke="{INK}" stroke-width="3"/>')
     label = "Ilustrasi mempelai pria" if kind == "groom" else "Ilustrasi mempelai wanita"
     return svg(w, h, "".join(b), label)

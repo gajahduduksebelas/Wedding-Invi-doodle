@@ -42,10 +42,10 @@ export const AnnouncementSection: React.FC<AnnouncementSectionProps> = ({ couple
           className="mb-3"
         />
 
-        {/* Display Title: KITA AKAN MENIKAH! */}
+        {/* Display Title: KAMI AKAN MENIKAH! */}
         <div className="flex flex-col items-center mt-1">
           <h1 className="font-delicious text-[44px] sm:text-[50px] leading-[0.95] text-[#181818] tracking-wide uppercase">
-            KITA AKAN<br />MENIKAH!
+            KAMI AKAN<br />MENIKAH!
           </h1>
           <p className="font-allura text-[32px] sm:text-[36px] text-[#B4533C] mt-2 leading-none">
             {groomName} &amp; {brideName}

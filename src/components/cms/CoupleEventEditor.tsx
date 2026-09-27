@@ -205,7 +205,7 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-[11px] font-bold text-[#7a7065] block uppercase">
-                Foto Mempelai Pria (4:3)
+                Foto Mempelai Pria (4:5)
               </label>
               <button
                 type="button"
@@ -221,7 +221,7 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
               <img
                 src={formData.groom.image || DEFAULT_GROOM_IMAGE}
                 alt="Groom avatar"
-                className="w-24 aspect-[4/3] rounded-[12px] object-cover border-2 border-[#181818] shadow-sm shrink-0"
+                className="w-20 aspect-[4/5] rounded-[12px] object-cover border-2 border-[#181818] shadow-sm shrink-0"
               />
               <div className="flex-1 min-w-0">
                 <input
@@ -327,7 +327,7 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-[11px] font-bold text-[#7a7065] block uppercase">
-                Foto Mempelai Wanita (4:3)
+                Foto Mempelai Wanita (4:5)
               </label>
               <button
                 type="button"
@@ -343,7 +343,7 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
               <img
                 src={formData.bride.image || DEFAULT_BRIDE_IMAGE}
                 alt="Bride avatar"
-                className="w-24 aspect-[4/3] rounded-[12px] object-cover border-2 border-[#181818] shadow-sm shrink-0"
+                className="w-20 aspect-[4/5] rounded-[12px] object-cover border-2 border-[#181818] shadow-sm shrink-0"
               />
               <div className="flex-1 min-w-0">
                 <input
