@@ -11,6 +11,7 @@ import { GiftSection } from './components/GiftSection';
 import { RsvpSection } from './components/RsvpSection';
 import { ClosingSection } from './components/ClosingSection';
 import { DressCodeSection } from './components/DressCodeSection';
+import { EnvelopeOpening } from './components/EnvelopeOpening';
 import { BottomNavigation } from './components/BottomNavigation';
 import { AudioPlayer, startBackgroundMusicFromGesture } from './components/AudioPlayer';
 import { Toast } from './components/Toast';
@@ -64,6 +65,9 @@ export default function App() {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isOpened, setIsOpened] = useState(false);
+  const [isEnvelopeOpening, setIsEnvelopeOpening] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const handleEnvelopeDone = React.useCallback(() => setIsEnvelopeOpening(false), []);
   const [activeTab, setActiveTab] = useState('invite');
   const wasPlayingBeforeVideoRef = React.useRef(false);
   const isVideoActiveRef = React.useRef(false);
@@ -401,6 +405,11 @@ export default function App() {
 
   const handleOpenInvitation = () => {
     startBackgroundMusicFromGesture();
+    // The envelope animation covers the screen while the invitation renders
+    // underneath; guests who prefer reduced motion go straight in.
+    const reduceMotion =
+      typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (!reduceMotion) setIsEnvelopeOpening(true);
     setIsOpened(true);
     wasPlayingBeforeVideoRef.current = true;
     if (!isPlaying) {
@@ -410,9 +419,10 @@ export default function App() {
     setTimeout(() => {
       const homeElement = document.getElementById('home');
       if (homeElement) {
-        homeElement.scrollIntoView({ behavior: 'smooth' });
+        // Jump while hidden behind the envelope; glide when there is none.
+        homeElement.scrollIntoView({ behavior: reduceMotion ? 'smooth' : 'instant' });
       }
-    }, 150);
+    }, 60);
   };
 
   // Returns whether the wish was saved, so the RSVP form can report failures.
@@ -510,6 +520,130 @@ export default function App() {
       }
     }
   };
+
+  // Typing on a phone. The keyboard shrinks the visible screen, and every
+  // section is sized to "one screen", so while a field has focus we:
+  //  - freeze the screen height (--app-h) so sections keep their layout,
+  //  - turn off section snapping and hide the fixed bottom bars,
+  //  - keep the focused field above the keyboard,
+  //  - close the keyboard if the guest scrolls away from the field,
+  // and afterwards undo any page shift the phone made and snap back to the
+  // nearest section.
+  useEffect(() => {
+    if (currentView !== 'invitation') return;
+    const container = document.getElementById('invitationScrollContainer');
+    if (!container) return;
+    const root = document.documentElement;
+
+    const isTextField = (el: EventTarget | null): el is HTMLElement =>
+      el instanceof HTMLTextAreaElement ||
+      (el instanceof HTMLInputElement && !['checkbox', 'radio', 'button', 'submit', 'range'].includes(el.type));
+
+    const focusedField = () => {
+      const el = document.activeElement;
+      return isTextField(el) && container.contains(el) ? el : null;
+    };
+
+    const visibleArea = () => {
+      const vv = window.visualViewport;
+      return {
+        top: (vv?.offsetTop ?? 0) + 16,
+        bottom: (vv ? vv.offsetTop + vv.height : window.innerHeight) - 16,
+      };
+    };
+
+    let adjusting = false;
+    const keepVisible = () => {
+      const el = focusedField();
+      if (!el) return;
+      const { top, bottom } = visibleArea();
+      const rect = el.getBoundingClientRect();
+      let delta = 0;
+      if (rect.bottom > bottom) delta = rect.bottom - bottom + 24;
+      else if (rect.top < top) delta = rect.top - top - 24;
+      if (delta !== 0) {
+        adjusting = true;
+        container.scrollBy({ top: delta, behavior: 'smooth' });
+        window.setTimeout(() => (adjusting = false), 450);
+      }
+    };
+
+    // Scrolling well away from the field means the guest is done typing:
+    // close the keyboard so the rest of the invitation shows normally.
+    const onContainerScroll = () => {
+      if (adjusting) return;
+      const el = focusedField();
+      if (!el) return;
+      const { top, bottom } = visibleArea();
+      const rect = el.getBoundingClientRect();
+      if (rect.bottom < top || rect.top > bottom) el.blur();
+    };
+
+    const endTyping = () => {
+      // Wait for the keyboard to close before measuring anything.
+      window.setTimeout(() => {
+        // Undo the page shift the phone made for the keyboard (iOS scrolls
+        // the whole page up) and unfreeze the screen height.
+        window.scrollTo(0, 0);
+        root.style.removeProperty('--app-h');
+
+        // Land on the section the guest scrolled to. This must happen while
+        // snapping is still off: turning snapping back on makes the browser
+        // jump to the section it was snapped to before typing (the RSVP
+        // form), not the one on screen now.
+        const containerTop = container.getBoundingClientRect().top;
+        let nearestTop = 0;
+        let best = Infinity;
+        container.querySelectorAll<HTMLElement>('.mobile-snap-section').forEach((section) => {
+          const offset = section.getBoundingClientRect().top - containerTop;
+          if (Math.abs(offset) < best) {
+            best = Math.abs(offset);
+            nearestTop = offset;
+          }
+        });
+        if (best < container.clientHeight / 2) {
+          container.scrollTo({ top: container.scrollTop + nearestTop, behavior: 'instant' });
+        }
+
+        // Snapping and the bottom bars come back on the next frame, once
+        // the position above has been applied.
+        requestAnimationFrame(() => setIsTyping(false));
+      }, 350);
+    };
+
+    let blurTimer: number | undefined;
+    const onFocusIn = (e: FocusEvent) => {
+      if (!isTextField(e.target)) return;
+      window.clearTimeout(blurTimer);
+      // Freeze the height before the keyboard starts shrinking the screen.
+      if (!root.style.getPropertyValue('--app-h')) {
+        root.style.setProperty('--app-h', `${container.clientHeight}px`);
+      }
+      setIsTyping(true);
+      // Wait for the keyboard to finish sliding up before measuring.
+      window.setTimeout(keepVisible, 350);
+    };
+    const onFocusOut = (e: FocusEvent) => {
+      if (!isTextField(e.target)) return;
+      // Moving between fields fires focusout then focusin; don't flicker.
+      blurTimer = window.setTimeout(() => {
+        if (!focusedField()) endTyping();
+      }, 120);
+    };
+
+    container.addEventListener('focusin', onFocusIn);
+    container.addEventListener('focusout', onFocusOut);
+    container.addEventListener('scroll', onContainerScroll, { passive: true });
+    window.visualViewport?.addEventListener('resize', keepVisible);
+    return () => {
+      window.clearTimeout(blurTimer);
+      container.removeEventListener('focusin', onFocusIn);
+      container.removeEventListener('focusout', onFocusOut);
+      container.removeEventListener('scroll', onContainerScroll);
+      window.visualViewport?.removeEventListener('resize', keepVisible);
+      root.style.removeProperty('--app-h');
+    };
+  }, [currentView]);
 
   // Observe active section for bottom navigation tab sync
   useEffect(() => {
@@ -667,22 +801,32 @@ export default function App() {
 
   // Otherwise, render the romantic, doodle-styled wedding invitation for invitees
   return (
-    <div className="h-dvh w-full bg-[#FAF7EE] text-[#181818] overflow-hidden flex flex-col items-center relative selection:bg-[#FBE8E6] selection:text-[#B4533C]">
+    <div className="h-[var(--app-h,100dvh)] w-full bg-[#FAF7EE] text-[#181818] overflow-hidden flex flex-col items-center relative selection:bg-[#FBE8E6] selection:text-[#B4533C]">
       {/* Toast Alert */}
       <Toast message={toast.message} isVisible={toast.isVisible} type={toast.type} />
+
+      {isEnvelopeOpening && (
+        <EnvelopeOpening
+          groomName={couple.groom.nickname || 'Rendra'}
+          brideName={couple.bride.nickname || 'Naya'}
+          onDone={handleEnvelopeDone}
+        />
+      )}
 
       {/* Floating Audio Mini-FAB */}
       <AudioPlayer
         audioUrl={couple.audioUrl || COUPLE_DATA.audioUrl}
         isPlaying={isPlaying}
         onToggle={handleToggleMusic}
-        visibleButton={isOpened}
+        visibleButton={isOpened && !isTyping}
       />
 
       {/* 1 Scroll Each Section Container (Mobile Snap Container) */}
       <div
         id="invitationScrollContainer"
-        className="w-full h-full overflow-y-auto mobile-snap-container flex flex-col items-center"
+        className={`w-full h-full overflow-y-auto mobile-snap-container flex flex-col items-center ${
+          isTyping ? 'is-typing' : ''
+        }`}
       >
         {/* Cover / Hero Gate */}
         <HeroSection
@@ -751,7 +895,7 @@ export default function App() {
       </div>
 
       {/* Fixed Bottom Navigation Bar */}
-      {isOpened && (
+      {isOpened && !isTyping && (
         <BottomNavigation
           activeTab={activeTab}
           onTabChange={(tabId) => setActiveTab(tabId)}

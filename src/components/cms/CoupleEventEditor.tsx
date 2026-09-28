@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Heart, Calendar, Clock, MapPin, Music, Sparkles, Save, RotateCcw, Upload, Crop, Video, Eye, EyeOff } from 'lucide-react';
 import { CoupleData, EventDetail } from '../../types';
-import { COUPLE_DATA, EVENTS_DATA, DEFAULT_GROOM_IMAGE, DEFAULT_BRIDE_IMAGE } from '../../data/weddingData';
+import { COUPLE_DATA, EVENTS_DATA, DEFAULT_GROOM_IMAGE, DEFAULT_BRIDE_IMAGE, DEFAULT_COVER_IMAGE } from '../../data/weddingData';
 import { ImageCropperModal, PHOTO_ASPECTS } from './ImageCropperModal';
 import { AudioUploader } from './AudioUploader';
 import { useDraftReporter } from '../../lib/useDraftReporter';
@@ -25,15 +25,18 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
   const [eventsData, setEventsData] = useState<EventDetail[]>(events);
   useDraftReporter({ couple: formData, events: eventsData }, { couple, events }, onDraftChange);
   const [cropperOpen, setCropperOpen] = useState(false);
-  const [cropperTarget, setCropperTarget] = useState<'groom' | 'bride'>('groom');
+  const [cropperTarget, setCropperTarget] = useState<'groom' | 'bride' | 'cover'>('groom');
 
-  const handleOpenCropper = (target: 'groom' | 'bride') => {
+  const handleOpenCropper = (target: 'groom' | 'bride' | 'cover') => {
     setCropperTarget(target);
     setCropperOpen(true);
   };
 
   const handlePersonCropComplete = (croppedDataUrl: string) => {
-    if (cropperTarget === 'groom') {
+    if (cropperTarget === 'cover') {
+      setFormData((prev) => ({ ...prev, coverImage: croppedDataUrl }));
+      onShowToast('Foto sampul beranda berhasil diupdate & dipotong! 🖼️');
+    } else if (cropperTarget === 'groom') {
       setFormData((prev) => ({
         ...prev,
         groom: { ...prev.groom, image: croppedDataUrl },
@@ -117,6 +120,42 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
             <Save className="w-4 h-4" />
             <span>Simpan Perubahan</span>
           </button>
+        </div>
+      </div>
+
+      {/* Home cover photo */}
+      <div className="rounded-2xl bg-white p-5 border-2 border-[#4a4238] shadow-[3px_4px_0px_#4a4238] flex flex-col sm:flex-row gap-4 sm:items-center">
+        <div className="paper-grain w-32 aspect-square rounded-[12px] overflow-hidden border-2 border-[#181818] shrink-0 bg-[#EFE3C6]">
+          <img
+            src={formData.coverImage || DEFAULT_COVER_IMAGE}
+            alt="Foto sampul beranda"
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <div className="flex-1 min-w-0 flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h3 className="text-[16px] font-bold text-[#2b2620] font-heading">Foto Sampul Beranda (1:1)</h3>
+              <p className="text-[12px] text-[#7a7065]">
+                Tampil setengah layar di atas tulisan "Kami Akan Menikah", dengan tekstur kertas dan tepi sobekan.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleOpenCropper('cover')}
+              className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#51582f] text-white text-[11px] font-bold border border-[#4a4238] shadow-xs hover:bg-[#434926] cursor-pointer"
+            >
+              <Upload className="w-3 h-3" />
+              <span>Upload &amp; Crop</span>
+            </button>
+          </div>
+          <input
+            type="url"
+            value={formData.coverImage || ''}
+            onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
+            placeholder="Atau tempel URL foto..."
+            className="w-full px-2.5 py-1.5 rounded-lg border border-[#e6dac5] bg-white text-[12px] font-mono text-[#2b2620] focus:outline-none"
+          />
         </div>
       </div>
 
@@ -760,14 +799,28 @@ export const CoupleEventEditor: React.FC<CoupleEventEditorProps> = ({
       <ImageCropperModal
         isOpen={cropperOpen}
         onClose={() => setCropperOpen(false)}
-        initialImage={cropperTarget === 'groom' ? formData.groom.image : formData.bride.image}
+        initialImage={
+          cropperTarget === 'cover'
+            ? formData.coverImage || ''
+            : cropperTarget === 'groom'
+              ? formData.groom.image
+              : formData.bride.image
+        }
         onCropComplete={handlePersonCropComplete}
-        targetAspectRatio={PHOTO_ASPECTS.couple}
-        previewLabel={cropperTarget === 'groom' ? 'Kartu "The Groom"' : 'Kartu "The Bride"'}
+        targetAspectRatio={cropperTarget === 'cover' ? PHOTO_ASPECTS.cover : PHOTO_ASPECTS.couple}
+        previewLabel={
+          cropperTarget === 'cover'
+            ? 'Sampul beranda'
+            : cropperTarget === 'groom'
+              ? 'Kartu "The Groom"'
+              : 'Kartu "The Bride"'
+        }
         title={
-          cropperTarget === 'groom'
-            ? 'Upload & Crop Foto Pengantin Pria'
-            : 'Upload & Crop Foto Pengantin Wanita'
+          cropperTarget === 'cover'
+            ? 'Upload & Crop Foto Sampul Beranda'
+            : cropperTarget === 'groom'
+              ? 'Upload & Crop Foto Pengantin Pria'
+              : 'Upload & Crop Foto Pengantin Wanita'
         }
       />
     </form>

@@ -68,7 +68,7 @@ export const ClosingSection: React.FC<ClosingSectionProps> = ({ couple }) => {
 
             {/* Subtext in Allura cursive */}
             <p className="font-allura text-[22px] sm:text-[24px] text-[#B4533C] mt-1 leading-snug">
-              Dibuat dengan cinta, coretan doodle &amp; senyuman
+              Dibuat oleh Fadly dan Anna dengan cinta dan senyuman
             </p>
           </div>
         </div>

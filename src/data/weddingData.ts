@@ -11,6 +11,7 @@ export const DEFAULT_AUDIO_URL = '/assets/music/canon-in-d-music-box.mp3';
 export const DEFAULT_VIDEO_URL = '/assets/video/our-story.webm';
 export const DEFAULT_GROOM_IMAGE = '/assets/couple/groom.svg';
 export const DEFAULT_BRIDE_IMAGE = '/assets/couple/bride.svg';
+export const DEFAULT_COVER_IMAGE = '/assets/couple/cover.svg';
 
 export const COUPLE_DATA: CoupleData = {
   groom: {
@@ -33,6 +34,7 @@ export const COUPLE_DATA: CoupleData = {
   weddingCity: 'Bandung',
   targetTimestamp: new Date('2027-02-14T09:00:00+07:00').getTime(),
   audioUrl: DEFAULT_AUDIO_URL,
+  coverImage: DEFAULT_COVER_IMAGE,
   audioTitle: 'Canon in D (Music Box)',
   loveStory: [
     {
