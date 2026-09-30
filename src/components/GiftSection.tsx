@@ -3,6 +3,7 @@ import { Copy, Check } from 'lucide-react';
 import { BANK_ACCOUNTS, DEFAULT_GIFT_ADDRESS } from '../data/weddingData';
 import { BankAccount } from '../types';
 import { SectionHeading } from './DoodleIcons';
+import { DoodleScatter } from './DoodleScatter';
 
 interface GiftSectionProps {
   onShowToast: (message: string, type?: 'success' | 'copy') => void;
@@ -36,8 +37,10 @@ export const GiftSection: React.FC<GiftSectionProps> = ({
     <section
       id="gift"
       aria-label="Amplop Digital"
-      className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center select-none"
+      className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative isolate overflow-hidden select-none"
     >
+      <DoodleScatter seed="gift" prefer={['giftBox', 'envelopes']} feature="bow" />
+
       <div className="w-full max-w-[400px] flex flex-col items-center my-auto animate-doodle-in">
         <SectionHeading
           subheadline="Tanda kasih"

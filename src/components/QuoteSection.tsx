@@ -1,17 +1,20 @@
 import React from 'react';
-import { DoodleDiamondRing, SectionHeading } from './DoodleIcons';
+import { SectionHeading } from './DoodleIcons';
+import { Doodle, DoodleScatter } from './DoodleScatter';
 
 export const QuoteSection: React.FC = () => {
   return (
     <section
       id="quote"
       aria-label="Kutipan Pernikahan"
-      className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative select-none"
+      className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative isolate overflow-hidden select-none"
     >
+      <DoodleScatter seed="quote" prefer={['doves', 'rose', 'loveLetter']} feature="rings" />
+
       <div className="w-full max-w-[400px] relative pt-6 my-auto animate-doodle-in">
-        {/* Doodle Diamond Ring perched on top center */}
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
-          <DoodleDiamondRing className="w-16 h-16 drop-shadow-xs" />
+        {/* Ring box perched on top center */}
+        <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+          <Doodle name="ringBox" className="w-16 h-auto" />
         </div>
 
         {/* Card Container */}

@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { COUPLE_DATA, EVENTS_DATA } from '../data/weddingData';
 import { CoupleData, EventDetail } from '../types';
 import {
-  DoodleCalendar,
-  DoodleToastGlasses,
-  DoodleWeddingBells,
   SectionHeading,
 } from './DoodleIcons';
+import { Doodle, DoodleScatter } from './DoodleScatter';
 
 interface CountdownAndEventsProps {
   couple?: CoupleData;
@@ -59,12 +57,14 @@ export const CountdownAndEvents: React.FC<CountdownAndEventsProps> = ({
       <section
         id="save-date"
         aria-label="Hitung Mundur"
-        className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center select-none"
+        className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative isolate overflow-hidden select-none"
       >
+        <DoodleScatter seed="save-date" prefer={['heartBalloons', 'loveLetter']} feature="flowerArch" />
+
         <div className="w-full max-w-[400px] rounded-[28px] bg-[#EBD9A0] border-[2px] border-dashed border-[#181818] p-6 sm:p-7 relative my-auto animate-doodle-in">
           {/* Hanging Calendar Doodle on Top Right */}
           <div className="absolute -top-6 -right-2 z-10 pointer-events-none">
-            <DoodleCalendar className="w-16 sm:w-18 h-auto" />
+            <Doodle name="calendar" className="w-16 sm:w-18 h-auto rotate-6" />
           </div>
 
           <SectionHeading
@@ -139,8 +139,10 @@ export const CountdownAndEvents: React.FC<CountdownAndEventsProps> = ({
       <section
         id="acara"
         aria-label="Detail Acara"
-        className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center select-none"
+        className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative isolate overflow-hidden select-none"
       >
+        <DoodleScatter seed="acara" prefer={['weddingCake', 'doves']} feature="weddingCar" />
+
         <div className="w-full max-w-[400px] flex flex-col items-center my-auto animate-doodle-in">
           <SectionHeading
             subheadline="Rangkaian prosesi"
@@ -173,9 +175,9 @@ export const CountdownAndEvents: React.FC<CountdownAndEventsProps> = ({
                   {/* Top-Right Hand-drawn Doodle */}
                   <div className="absolute top-3.5 right-4 pointer-events-none">
                     {isAkad ? (
-                      <DoodleToastGlasses className="w-10 sm:w-12 h-auto" />
+                      <Doodle name="wineGlasses" className="w-11 sm:w-12 h-auto" />
                     ) : (
-                      <DoodleWeddingBells className="w-10 sm:w-12 h-auto" />
+                      <Doodle name="weddingBells" className="w-12 sm:w-13 h-auto" />
                     )}
                   </div>
 

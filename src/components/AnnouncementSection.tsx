@@ -1,7 +1,7 @@
 import React from 'react';
 import { COUPLE_DATA, DEFAULT_COVER_IMAGE } from '../data/weddingData';
 import { CoupleData } from '../types';
-import { DoodleHeartBalloons } from './DoodleIcons';
+import { DoodleScatter } from './DoodleScatter';
 import { TornPaperEdge } from './PaperEdge';
 
 interface AnnouncementSectionProps {
@@ -20,7 +20,7 @@ export const AnnouncementSection: React.FC<AnnouncementSectionProps> = ({ couple
     <section
       id="home"
       aria-label="Pembuka Undangan"
-      className="mobile-snap-section w-full flex flex-col items-center justify-start! relative overflow-hidden select-none"
+      className="mobile-snap-section w-full flex flex-col items-center justify-start! relative isolate overflow-hidden select-none"
     >
       {/* Cover photo: the top half of the screen, cropped 1:1 in the CMS,
           with paper grain and a torn-paper edge into the page below. */}
@@ -35,12 +35,9 @@ export const AnnouncementSection: React.FC<AnnouncementSectionProps> = ({ couple
         <TornPaperEdge className="absolute left-0 right-0 -bottom-px z-10" />
       </div>
 
-      <div className="relative w-full max-w-[380px] px-4 flex flex-col items-center text-center z-20 my-auto animate-doodle-in">
-        {/* Heart balloons tucked beside the title */}
-        <div className="absolute -top-8 right-1 z-10 pointer-events-none">
-          <DoodleHeartBalloons className="w-12 sm:w-14 h-auto" />
-        </div>
+      <DoodleScatter seed="home" prefer={['heartBalloons', 'holdingHands', 'heartArrow']} />
 
+      <div className="relative w-full max-w-[380px] px-4 flex flex-col items-center text-center z-20 my-auto animate-doodle-in">
         {/* Display Title: KAMI AKAN MENIKAH! */}
         <h1 className="font-delicious text-[44px] sm:text-[50px] leading-[0.95] text-[#181818] tracking-wide uppercase">
           KAMI AKAN

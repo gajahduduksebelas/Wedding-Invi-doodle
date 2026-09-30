@@ -354,3 +354,14 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Scattered doodle stickers (DoodleScatter) */
+.doodle-scatter-item {
+  opacity: 0.92;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .doodle-scatter-item {
+    animation: none !important;
+  }
+}
