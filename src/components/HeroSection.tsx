@@ -6,6 +6,8 @@ import {
   DoodleHeartBalloons,
   DoodleDiamondRing,
   DoodleGiftBox,
+  DoodleKissingBirds,
+  DoodleBotanicalBranch,
 } from './DoodleIcons';
 import { DOODLE_ASSETS } from '../data/weddingData';
 
@@ -23,7 +25,7 @@ const CoverTrimmings: React.FC = () => (
     <div className="absolute -inset-3.5 rounded-[36px] border-2 border-dashed border-[#B4533C]/55 -rotate-[1.6deg]" />
 
     {/* Dashed loop trailing off the bottom-left corner, ending in a heart */}
-    <svg viewBox="0 0 90 70" className="absolute -left-4 min-[380px]:-left-7 -bottom-[60px] w-[68px] h-[53px] overflow-visible">
+    <svg viewBox="0 0 90 70" className="absolute -left-4 -bottom-[60px] w-[68px] h-[53px] overflow-visible">
       <path
         d="M78 6 C62 22 30 10 26 30 C23 45 44 50 40 36 C37 26 18 34 12 52"
         fill="none"
@@ -38,11 +40,70 @@ const CoverTrimmings: React.FC = () => (
 
     <Sparkle className="-top-8 left-6 w-4 h-4" />
     <Sparkle className="-top-4 left-12 w-2.5 h-2.5" color="#B4533C" />
-    <Sparkle className="top-[42%] -right-5 min-[380px]:-right-7 w-3.5 h-3.5" color="#B4533C" />
+    <Sparkle className="top-[42%] -right-5 w-3.5 h-3.5" color="#B4533C" />
     <Sparkle className="-bottom-9 right-10 w-4 h-4" />
     <span className="absolute -bottom-6 right-4 w-1.5 h-1.5 rounded-full bg-[#181818]/60" />
     <span className="absolute top-[30%] -left-6 w-1.5 h-1.5 rounded-full bg-[#B4533C]" />
   </div>
+);
+
+// Bunting strung across the top of the cover. Flags hang from a sagging string.
+const FLAG_COLORS = ['#F7C6BA', '#C6E2CB', '#EAD69B', '#B4533C', '#EFE3C6'];
+const BUNTING_W = 400;
+const buntingY = (x: number) => 6 + 22 * Math.sin((Math.PI * x) / BUNTING_W);
+const buntingFlags = Array.from({ length: 11 }, (_, i) => {
+  const x = 22 + i * 35.6;
+  const y = buntingY(x);
+  const tilt = (Math.atan(((22 * Math.PI) / BUNTING_W) * Math.cos((Math.PI * x) / BUNTING_W)) * 180) / Math.PI;
+  return { x, y, tilt, color: FLAG_COLORS[i % FLAG_COLORS.length] };
+});
+
+const CoverBunting: React.FC = () => (
+  <svg
+    viewBox={`0 0 ${BUNTING_W} 52`}
+    className="absolute top-0 left-0 w-full h-auto z-10 pointer-events-none"
+    aria-hidden="true"
+  >
+    <path
+      d={`M0 ${buntingY(0)} Q${BUNTING_W / 2} ${buntingY(BUNTING_W / 2) * 2 - 6} ${BUNTING_W} ${buntingY(BUNTING_W)}`}
+      fill="none"
+      stroke="#181818"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+    />
+    {buntingFlags.map((f, i) => (
+      <path
+        key={i}
+        d="M-9 0 L9 0 L0 17 Z"
+        transform={`translate(${f.x.toFixed(1)} ${f.y.toFixed(1)}) rotate(${f.tilt.toFixed(1)})`}
+        fill={f.color}
+        stroke="#181818"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    ))}
+  </svg>
+);
+
+// Dashed hand-drawn ground line along the bottom of the cover.
+const CoverGround: React.FC = () => (
+  <svg
+    viewBox="0 0 400 20"
+    preserveAspectRatio="none"
+    className="absolute bottom-[26px] left-0 w-full h-5 z-10 pointer-events-none"
+    aria-hidden="true"
+  >
+    <path
+      d="M-4 11 C40 5 70 15 110 10 C150 5 180 14 220 10 C260 6 300 15 340 9 C365 6 385 11 404 9"
+      fill="none"
+      stroke="#181818"
+      strokeOpacity="0.55"
+      strokeWidth="2"
+      strokeDasharray="8 7"
+      strokeLinecap="round"
+      vectorEffect="non-scaling-stroke"
+    />
+  </svg>
 );
 
 interface HeroSectionProps {
@@ -80,22 +141,40 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       aria-label="Cover Undangan"
       className="mobile-snap-section w-full bg-[#FAF7EE] relative flex flex-col items-center justify-center overflow-hidden py-4 px-3.5 select-none"
     >
-      {/* Decorative Doodles in Background with animations */}
-      <div className="absolute top-3 left-3 z-10 pointer-events-none">
+      {/* Page decoration: bunting across the top, a dashed ground line along
+          the bottom, and doodles in the space above and below the card.
+          Kept to a phone-width column so it stays together on desktop. */}
+      <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] pointer-events-none">
+      <CoverBunting />
+      <div className="absolute top-14 left-3 z-10 pointer-events-none animate-doodle-float">
         <DoodleFlyingBird className="w-14 sm:w-18 h-auto" />
       </div>
-      <div className="absolute top-4 right-3 z-10 pointer-events-none">
+      <div className="absolute top-12 right-3 z-10 pointer-events-none">
         <DoodleHeartBalloons className="w-12 sm:w-16 h-auto" />
       </div>
-      <div className="absolute bottom-5 left-3 z-10 pointer-events-none opacity-85">
-        <DoodleDiamondRing className="w-12 sm:w-14 h-auto" />
+      <Sparkle className="top-[88px] left-[38%] w-3 h-3 [@media(max-height:700px)]:hidden" color="#B4533C" />
+      <Sparkle className="top-[118px] right-[30%] w-4 h-4 [@media(max-height:700px)]:hidden" />
+
+      <CoverGround />
+      <div className="absolute bottom-[34px] left-4 z-10 pointer-events-none">
+        <DoodleDiamondRing className="w-11 sm:w-13 h-auto" />
       </div>
-      <div className="absolute bottom-5 right-3 z-10 pointer-events-none opacity-85">
-        <DoodleGiftBox className="w-12 sm:w-14 h-auto" />
+      <div className="absolute bottom-[36px] left-1/2 -translate-x-1/2 z-10 pointer-events-none [@media(max-height:700px)]:hidden">
+        <DoodleKissingBirds className="w-18 h-auto" />
+      </div>
+      <div className="absolute bottom-[34px] right-4 z-10 pointer-events-none">
+        <DoodleGiftBox className="w-11 sm:w-13 h-auto" />
+      </div>
+      <div className="absolute bottom-[30px] left-[22%] z-10 pointer-events-none opacity-80 -rotate-12 [@media(max-height:700px)]:hidden">
+        <DoodleBotanicalBranch className="w-6 h-auto" />
+      </div>
+      <div className="absolute bottom-[30px] right-[22%] z-10 pointer-events-none opacity-80 rotate-12 -scale-x-100 [@media(max-height:700px)]:hidden">
+        <DoodleBotanicalBranch className="w-6 h-auto" />
+      </div>
       </div>
 
       {/* Central Cover Invitation Card, framed by a few doodled trimmings */}
-      <div className="relative w-full max-w-[318px] my-auto animate-doodle-in">
+      <div className="relative w-[calc(100%-1.75rem)] max-w-[340px] my-auto animate-doodle-in">
         <CoverTrimmings />
 
       <div className="w-full doodle-card px-5 pt-8 pb-5 relative z-20 flex flex-col items-center text-center">
@@ -106,7 +185,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         />
 
         {/* Floral envelope tucked over the top-right corner */}
-        <div className="absolute -top-12 -right-5 min-[380px]:-right-8 w-[104px] h-[84px] rotate-[9deg] pointer-events-none">
+        <div className="absolute -top-12 -right-5 w-[108px] h-[88px] rotate-[9deg] pointer-events-none">
           <img
             src={DOODLE_ASSETS.floralEnvelope}
             alt="Amplop Undangan"
