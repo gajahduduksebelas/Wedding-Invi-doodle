@@ -215,6 +215,21 @@ def ground(w, h, y, color):
 
 # ------------------------------------------------------------- assets: misc
 
+def floral_envelope():
+    w, h = 200, 150
+    b = []
+    b.append(f'<rect x="22" y="40" width="156" height="98" rx="10" fill="{PAPER}" {LINE}/>')
+    b.append(f'<path d="M 24 44 L 100 98 L 176 44" fill="none" {LINE}/>')
+    b.append(f'<path d="M 24 136 L 80 88 M 176 136 L 120 88" fill="none" {LINE} stroke-width="2.4" opacity="0.6"/>')
+    b.append(heart(100, 100, 0.8, TERRA))
+    # flowers on the top-left corner and a sprig on the right
+    b.append(leaf(32, 50, 0.9, -70) + leaf(48, 38, 0.9, -20) + leaf(76, 40, 0.75, 30))
+    b.append(flower(40, 40, 1.05) + flower(64, 32, 0.8, BUTTER, TERRA) + flower(26, 66, 0.7, "#FFFFFF"))
+    b.append(sprig(170, 60, 0.7, 25))
+    b.append(sparkle(150, 22, 0.8) + sparkle(186, 32, 0.5) + dot(128, 20) + dot(14, 96, 1.8))
+    return svg(w, h, "".join(b), "Amplop undangan bergambar bunga")
+
+
 def portrait(kind):
     # 4:5, the ratio of the CoupleSection portrait frame.
     w, h = 320, 400
@@ -423,9 +438,11 @@ SCENES = [
 
 
 def main():
+    (OUT / "doodle").mkdir(parents=True, exist_ok=True)
     (OUT / "couple").mkdir(parents=True, exist_ok=True)
     (OUT / "gallery").mkdir(parents=True, exist_ok=True)
 
+    (OUT / "doodle" / "floral-envelope.svg").write_text(floral_envelope())
     (OUT / "couple" / "groom.svg").write_text(portrait("groom"))
     (OUT / "couple" / "bride.svg").write_text(portrait("bride"))
     (OUT / "og-art.svg").write_text(og_art())

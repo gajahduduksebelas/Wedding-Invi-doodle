@@ -1,7 +1,6 @@
 import React from 'react';
 import { LiveStreamConfig } from '../types';
-import { SectionHeading } from './DoodleIcons';
-import { Doodle, DoodleScatter } from './DoodleScatter';
+import { DoodleOverlappingEnvelopes, SectionHeading } from './DoodleIcons';
 
 interface LiveStreamSectionProps {
   config?: LiveStreamConfig;
@@ -17,15 +16,13 @@ export const LiveStreamSection: React.FC<LiveStreamSectionProps> = ({ config }) 
     <section
       id="stream"
       aria-label="Siaran Langsung"
-      className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative isolate overflow-hidden select-none"
+      className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center select-none"
     >
-      <DoodleScatter seed="stream" prefer={['loveLetter', 'heartArrow']} />
-
       {/* Mint green backdrop container matching IMG_2713.PNG */}
       <div className="w-full max-w-[400px] rounded-[30px] bg-[#D7E7DD] p-4 sm:p-5 relative pt-10 my-auto animate-doodle-in">
-        {/* Envelopes doodle tucked over the top edge */}
+        {/* Overlapping Envelopes Doodle at top center */}
         <div className="absolute -top-6 left-6 sm:left-8 z-30 pointer-events-none">
-          <Doodle name="envelopes" className="w-18 sm:w-20 h-auto -rotate-6" />
+          <DoodleOverlappingEnvelopes className="w-18 sm:w-20 h-auto" />
         </div>
 
         {/* Card Body */}

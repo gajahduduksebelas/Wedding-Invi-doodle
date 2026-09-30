@@ -2,7 +2,20 @@ import React from 'react';
 import { Heart } from 'lucide-react';
 import { DressCodeColor, DressCodeConfig } from '../types';
 import { SectionHeading } from './DoodleIcons';
-import { Doodle, DoodleScatter } from './DoodleScatter';
+
+// Hand-drawn clothes hanger in the invitation's doodle style.
+const DoodleHanger: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 64 44" fill="none" className={className} aria-hidden="true">
+    <path
+      d="M32 13c-4.5 0-5-5.5-1.5-7 3-1.3 6 1 5.2 4.2-.6 2.4-3.7 3.4-3.7 6.3v1.2L6 34.2c-2.7 1.8-1.5 5.3 1.7 5.3h48.6c3.2 0 4.4-3.5 1.7-5.3L33 18"
+      stroke="#181818"
+      strokeWidth="2.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path d="M14 36.5c6-1 30-1 36 0" stroke="#B4533C" strokeWidth="2.2" strokeLinecap="round" />
+  </svg>
+);
 
 const Swatch: React.FC<{ color: DressCodeColor; index: number; avoid?: boolean }> = ({ color, index, avoid }) => (
   <li className="flex flex-col items-center w-[56px]">
@@ -33,12 +46,9 @@ export const DressCodeCard: React.FC<{ config: DressCodeConfig }> = ({ config })
   const notes = config.notes.filter((n) => n.trim());
   return (
   <article className="w-full doodle-card p-5 sm:p-6 flex flex-col items-center text-center relative">
-    {/* Suit and dress peeking over the card's top edge */}
-    <div className="absolute -top-7 left-4 pointer-events-none -rotate-8">
-      <Doodle name="suit" className="w-13 h-auto" />
-    </div>
-    <div className="absolute -top-7 right-4 pointer-events-none rotate-6">
-      <Doodle name="weddingDress" className="w-14 h-auto" />
+    {/* Hanger hooked over the card's top edge */}
+    <div className="absolute -top-6 right-5 pointer-events-none rotate-6">
+      <DoodleHanger className="w-12 h-auto" />
     </div>
 
     {config.attire && (
@@ -90,9 +100,8 @@ export const DressCodeSection: React.FC<{ config: DressCodeConfig }> = ({ config
   <section
     id="dresscode"
     aria-label="Dress Code"
-    className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative isolate overflow-hidden select-none"
+    className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center select-none"
   >
-    <DoodleScatter seed="dresscode" prefer={['heels', 'mensShoes', 'rose']} feature="bow" />
     <div className="w-full max-w-[400px] flex flex-col items-center my-auto animate-doodle-in">
       <SectionHeading
         subheadline="Busana yang dianjurkan"

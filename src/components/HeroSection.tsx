@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { Mail, Music, Edit3, Check } from 'lucide-react';
 import { CoupleData } from '../types';
-import { DOODLE, DoodleScatter } from './DoodleScatter';
+import {
+  DoodleFlyingBird,
+  DoodleHeartBalloons,
+  DoodleDiamondRing,
+  DoodleGiftBox,
+} from './DoodleIcons';
+import { DOODLE_ASSETS } from '../data/weddingData';
 
 interface HeroSectionProps {
   guestName: string;
@@ -37,9 +43,21 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     <section
       id="heroSection"
       aria-label="Cover Undangan"
-      className="mobile-snap-section w-full bg-[#FAF7EE] relative isolate flex flex-col items-center justify-center overflow-hidden py-4 px-3.5 select-none"
+      className="mobile-snap-section w-full bg-[#FAF7EE] relative flex flex-col items-center justify-center overflow-hidden py-4 px-3.5 select-none"
     >
-      <DoodleScatter seed="hero" prefer={['heartBalloons', 'doves', 'diamondRing', 'giftBox']} />
+      {/* Decorative Doodles in Background with animations */}
+      <div className="absolute top-3 left-3 z-10 pointer-events-none">
+        <DoodleFlyingBird className="w-14 sm:w-18 h-auto" />
+      </div>
+      <div className="absolute top-4 right-3 z-10 pointer-events-none">
+        <DoodleHeartBalloons className="w-12 sm:w-16 h-auto" />
+      </div>
+      <div className="absolute bottom-5 left-3 z-10 pointer-events-none opacity-85">
+        <DoodleDiamondRing className="w-12 sm:w-14 h-auto" />
+      </div>
+      <div className="absolute bottom-5 right-3 z-10 pointer-events-none opacity-85">
+        <DoodleGiftBox className="w-12 sm:w-14 h-auto" />
+      </div>
 
       {/* Central Cover Invitation Card */}
       <div className="w-full max-w-[380px] doodle-card p-5 sm:p-7 relative z-20 flex flex-col items-center text-center my-auto animate-doodle-in">
@@ -65,9 +83,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         </div>
 
         {/* Central Floral Envelope Graphic */}
-        <div className="relative my-2 sm:my-3 w-36 sm:w-40 h-28 sm:h-32 flex items-center justify-center">
+        <div className="relative my-2 sm:my-3 w-32 sm:w-36 h-24 sm:h-28 flex items-center justify-center">
           <img
-            src={DOODLE.floralEnvelope}
+            src={DOODLE_ASSETS.floralEnvelope}
             alt="Amplop Undangan"
             className="w-full h-full object-contain filter drop-shadow-[0_4px_10px_rgba(24,24,24,0.15)] animate-doodle-bob"
           />

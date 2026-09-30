@@ -1,6 +1,10 @@
 import React from 'react';
 import { CoupleData } from '../types';
-import { Doodle, DoodleScatter } from './DoodleScatter';
+import {
+  DoodleKissingBirds,
+  DoodleHeartBalloons,
+  DoodleGiftBox,
+} from './DoodleIcons';
 
 interface ClosingSectionProps {
   couple?: CoupleData;
@@ -12,9 +16,7 @@ export const ClosingSection: React.FC<ClosingSectionProps> = ({ couple }) => {
   const weddingDate = couple?.weddingDate || 'Minggu, 14 Februari 2027';
 
   return (
-    <div className="mobile-snap-section w-full flex flex-col items-center select-none justify-center px-4 py-6 relative isolate overflow-hidden">
-      <DoodleScatter seed="closing" prefer={['doves', 'heartBalloons', 'weddingCake', 'giftBox']} />
-
+    <div className="mobile-snap-section w-full flex flex-col items-center select-none justify-center px-4 py-6">
       {/* ============================================================ */}
       {/* 1. CLOSING SECTION                                           */}
       {/* ============================================================ */}
@@ -24,9 +26,9 @@ export const ClosingSection: React.FC<ClosingSectionProps> = ({ couple }) => {
         className="w-full max-w-[400px] flex flex-col items-center justify-center text-center relative my-auto animate-doodle-in"
       >
         <div className="w-full flex flex-col items-center relative z-20">
-          {/* The couple walking off together */}
-          <div className="mb-1">
-            <Doodle name="coupleWalking" alt="" className="w-28 sm:w-32 h-auto" />
+          {/* Hand-drawn mail doodle */}
+          <div className="mb-2">
+            <DoodleGiftBox className="w-14 sm:w-16 h-auto" />
           </div>
 
           {/* "Terima kasih" in Allura */}
@@ -47,8 +49,11 @@ export const ClosingSection: React.FC<ClosingSectionProps> = ({ couple }) => {
             {weddingDate}
           </p>
 
-          {/* Just married! */}
-          <Doodle name="weddingCar" className="w-36 sm:w-40 h-auto mt-3 -rotate-2" />
+          {/* Kissing Birds and Heart Balloon Doodles */}
+          <div className="w-full flex items-center justify-between mt-3 px-2">
+            <DoodleKissingBirds className="w-18 sm:w-22 h-auto" />
+            <DoodleHeartBalloons className="w-12 sm:w-14 h-auto" />
+          </div>
 
           {/* Bottom Card in Sand/Mustard tone matching IMG_2713.PNG */}
           <div className="w-full rounded-[24px] bg-[#EBD9A0] border-[2px] border-[#181818] shadow-[5px_5px_0px_#181818] p-5 mt-3 flex flex-col items-center text-center">

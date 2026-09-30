@@ -1,7 +1,6 @@
 import React from 'react';
 import { LoveStoryItem } from '../types';
-import { SectionHeading } from './DoodleIcons';
-import { DoodleScatter } from './DoodleScatter';
+import { DoodleBigHeartOutline, SectionHeading } from './DoodleIcons';
 
 interface LoveStorySectionProps {
   stories?: LoveStoryItem[];
@@ -45,9 +44,12 @@ export const LoveStorySection: React.FC<LoveStorySectionProps> = ({ stories }) =
     <section
       id="story"
       aria-label="Kisah Cinta"
-      className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative isolate overflow-hidden select-none"
+      className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative select-none"
     >
-      <DoodleScatter seed="story" prefer={['heartArrow', 'holdingHands', 'loveLetter']} feature="couple" />
+      {/* Floating Big Heart Doodle on Right */}
+      <div className="absolute top-8 right-2 z-10 pointer-events-none opacity-85">
+        <DoodleBigHeartOutline className="w-18 sm:w-22 h-auto" />
+      </div>
 
       <div className="w-full max-w-[400px] flex flex-col items-center relative z-20 my-auto animate-doodle-in">
         <SectionHeading

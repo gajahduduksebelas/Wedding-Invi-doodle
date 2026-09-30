@@ -1,8 +1,7 @@
 import React from 'react';
 import { COUPLE_DATA } from '../data/weddingData';
 import { CoupleData, CouplePerson } from '../types';
-import { SectionHeading } from './DoodleIcons';
-import { DoodleScatter } from './DoodleScatter';
+import { DoodleBotanicalBranch, SectionHeading } from './DoodleIcons';
 import { Camera, Heart } from 'lucide-react';
 
 interface CoupleSectionProps {
@@ -66,9 +65,12 @@ export const CoupleSection: React.FC<CoupleSectionProps> = ({ couple }) => {
       <section
         id="mempelai"
         aria-label="Mempelai Pria"
-        className="mobile-snap-section w-full px-4 py-8 flex flex-col items-center justify-center relative isolate overflow-hidden select-none"
+        className="mobile-snap-section w-full px-4 py-8 flex flex-col items-center justify-center relative select-none"
       >
-        <DoodleScatter seed="mempelai" prefer={['suit', 'mensShoes', 'diamondRing']} />
+        {/* Decorative Botanical Branch on Left Margin */}
+        <div className="absolute top-[18%] -left-1 sm:left-2 z-10 pointer-events-none opacity-85">
+          <DoodleBotanicalBranch className="w-10 sm:w-12 h-auto" />
+        </div>
 
         <div className="w-full max-w-[400px] flex flex-col items-center relative z-20 my-auto animate-doodle-in">
           <SectionHeading
@@ -91,9 +93,11 @@ export const CoupleSection: React.FC<CoupleSectionProps> = ({ couple }) => {
       <section
         id="mempelai-wanita"
         aria-label="Mempelai Wanita"
-        className="mobile-snap-section w-full px-4 py-8 flex flex-col items-center justify-center relative isolate overflow-hidden select-none"
+        className="mobile-snap-section w-full px-4 py-8 flex flex-col items-center justify-center relative select-none"
       >
-        <DoodleScatter seed="mempelai-wanita" prefer={['weddingDress', 'heels', 'rose']} />
+        <div className="absolute top-[18%] -right-1 sm:right-2 z-10 pointer-events-none opacity-85 -scale-x-100">
+          <DoodleBotanicalBranch className="w-10 sm:w-12 h-auto" />
+        </div>
 
         <div className="w-full max-w-[400px] flex flex-col items-center relative z-20 my-auto animate-doodle-in">
           {/* Romantic Ampersand & Heart Connector */}
