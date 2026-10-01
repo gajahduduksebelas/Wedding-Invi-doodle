@@ -11,6 +11,7 @@ import { GiftSection } from './components/GiftSection';
 import { RsvpSection } from './components/RsvpSection';
 import { ClosingSection } from './components/ClosingSection';
 import { DressCodeSection } from './components/DressCodeSection';
+import { useSectionMotion } from './lib/useSectionMotion';
 import { EnvelopeOpening } from './components/EnvelopeOpening';
 import { BottomNavigation } from './components/BottomNavigation';
 import { AudioPlayer, startBackgroundMusicFromGesture } from './components/AudioPlayer';
@@ -644,6 +645,15 @@ export default function App() {
       root.style.removeProperty('--app-h');
     };
   }, [currentView]);
+
+  // Scroll-driven entrances and doodle parallax, rebuilt whenever the set of
+  // sections changes (opening the invitation, toggling dress code / stream).
+  // Held back while the envelope plays so Home's entrance is actually seen.
+  useSectionMotion('invitationScrollContainer', currentView === 'invitation' && !isEnvelopeOpening, [
+    isOpened,
+    dressCode.enabled,
+    couple.liveStream?.enabled,
+  ]);
 
   // Observe active section for bottom navigation tab sync
   useEffect(() => {
