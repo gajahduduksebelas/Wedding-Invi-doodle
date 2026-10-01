@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Mail, Music, Edit3, Check } from 'lucide-react';
+import React from 'react';
+import { Mail, Music } from 'lucide-react';
 import { CoupleData } from '../types';
 import {
   DoodleFlyingBird,
@@ -108,7 +108,6 @@ const CoverGround: React.FC = () => (
 
 interface HeroSectionProps {
   guestName: string;
-  onUpdateGuestName: (newName: string) => void;
   onOpenInvitation: () => void;
   couple?: CoupleData;
   isOpened?: boolean;
@@ -116,24 +115,12 @@ interface HeroSectionProps {
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   guestName,
-  onUpdateGuestName,
   onOpenInvitation,
   couple,
   isOpened = false,
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [tempName, setTempName] = useState(guestName);
-
   const groomNickname = couple?.groom.nickname || 'Arga';
   const brideNickname = couple?.bride.nickname || 'Kirana';
-
-  const handleSaveName = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (tempName.trim()) {
-      onUpdateGuestName(tempName.trim());
-    }
-    setIsEditing(false);
-  };
 
   return (
     <section
@@ -207,41 +194,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             Kepada Yth. Bapak/Ibu/Saudara/i:
           </span>
 
-          {isEditing ? (
-            <form onSubmit={handleSaveName} className="flex items-center gap-1.5 mt-1 justify-center">
-              <input
-                type="text"
-                value={tempName}
-                onChange={(e) => setTempName(e.target.value)}
-                autoFocus
-                className="text-[14px] font-bold text-[#181818] bg-white px-2 py-1 rounded-lg border-[1.5px] border-[#B4533C] text-center focus:outline-none w-full max-w-[220px]"
-              />
-              <button
-                type="submit"
-                className="p-1.5 rounded-lg bg-[#B4533C] text-white hover:bg-[#a04630] cursor-pointer"
-                title="Simpan"
-              >
-                <Check className="w-3.5 h-3.5" />
-              </button>
-            </form>
-          ) : (
-            <div className="flex items-center justify-center gap-1.5 mt-0.5">
-              <h2 className="font-serif text-[17px] sm:text-[18px] font-bold text-[#181818] leading-tight">
-                {guestName}
-              </h2>
-              <button
-                type="button"
-                onClick={() => {
-                  setTempName(guestName);
-                  setIsEditing(true);
-                }}
-                className="p-1 text-stone-500 hover:text-[#B4533C] transition-colors rounded cursor-pointer"
-                title="Ubah nama tamu"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
+          <h2 className="font-serif text-[17px] sm:text-[18px] font-bold text-[#181818] leading-tight mt-0.5">
+            {guestName}
+          </h2>
 
           <span className="text-[11px] font-bold text-[#3E5B3D] block mt-0.5">
             di Tempat

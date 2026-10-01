@@ -135,7 +135,7 @@ export default function App() {
   }, []);
 
   // Guest name initialization for recipient (from URL query param or default)
-  const [guestName, setGuestName] = useState(() => {
+  const [guestName] = useState(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const toParam = params.get('to') || params.get('u') || params.get('guest');
@@ -143,7 +143,8 @@ export default function App() {
       // throw (and blank the page) on names containing a literal '%'.
       if (toParam) return toParam;
     }
-    return 'Budi Santoso & Partner';
+    // Opened without a personal link.
+    return 'Tamu Undangan';
   });
 
   // Dynamic document title based on bride and groom name
@@ -844,7 +845,6 @@ export default function App() {
         {/* Cover / Hero Gate */}
         <HeroSection
           guestName={guestName}
-          onUpdateGuestName={setGuestName}
           onOpenInvitation={handleOpenInvitation}
           couple={couple}
           isOpened={isOpened}
