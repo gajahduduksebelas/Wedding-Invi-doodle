@@ -89,6 +89,10 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({
                   maxLength={80}
                   value={rsvpName}
                   onChange={(e) => setRsvpName(e.target.value)}
+                  // Keep the phone's saved contact name out of it: guests type
+                  // the name they want shown with their wish.
+                  name="rsvp-guest-name"
+                  autoComplete="off"
                   placeholder="Masukkan nama lengkap Anda"
                   className="w-full px-3 py-2 rounded-xl border-[2px] border-[#181818] bg-white text-[12.5px] font-medium text-[#181818] focus:outline-none focus:bg-[#FAF7EE] shadow-[2px_2px_0px_#181818]"
                 />
