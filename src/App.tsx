@@ -783,9 +783,12 @@ export default function App() {
           wishes={wishes}
           waGuests={waGuests}
           onSaveCoupleAndEvents={(newCouple, newEvents) => {
-            setCouple(newCouple);
+            // Love Story has its own tab: keep whatever it last saved so an
+            // older copy carried in this editor's draft can't overwrite it.
+            setCouple((prev) => ({ ...newCouple, loveStory: prev.loveStory }));
             setEvents(newEvents);
           }}
+          onSaveLoveStory={(stories) => setCouple((prev) => ({ ...prev, loveStory: stories }))}
           onSaveVideoConfig={(newConfig) => setVideoConfig(newConfig)}
           onSaveBanksAndAddress={(newBanks, newAddress) => {
             setBanks(newBanks);
