@@ -392,6 +392,18 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
           </div>
         </div>
 
+        {/* CSV import opens right here, under its button */}
+        <GuestCsvImporter
+          embedded
+          isOpen={isBulkOpen}
+          onClose={() => setIsBulkOpen(false)}
+          existingGuests={guests}
+          onImport={(newGuests) => {
+            onUpdateGuests([...newGuests, ...guests]);
+          }}
+          onShowToast={onShowToast}
+        />
+
         {/* Metric Cards & Progress Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-[#e6dac5]">
           <div className="rounded-xl bg-[#f9f0e0] p-3 border border-[#e6dac5]">
@@ -479,17 +491,6 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
           </div>
         </div>
       )}
-
-      {/* 3. Bulk CSV / Spreadsheet Import Drawer */}
-      <GuestCsvImporter
-        isOpen={isBulkOpen}
-        onClose={() => setIsBulkOpen(false)}
-        existingGuests={guests}
-        onImport={(newGuests) => {
-          onUpdateGuests([...newGuests, ...guests]);
-        }}
-        onShowToast={onShowToast}
-      />
 
       {/* 4. Two Columns: Template & Live WhatsApp Preview */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

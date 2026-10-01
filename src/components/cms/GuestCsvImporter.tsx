@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Upload,
   Download,
@@ -89,6 +89,8 @@ interface GuestCsvImporterProps {
   existingGuests: WhatsAppGuest[];
   onImport: (newGuests: WhatsAppGuest[]) => void;
   onShowToast: (message: string) => void;
+  /** Rendered inside another card (right under its button) instead of as its own card. */
+  embedded?: boolean;
 }
 
 export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
@@ -97,14 +99,30 @@ export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
   existingGuests,
   onImport,
   onShowToast,
+  embedded = false,
 }) => {
   const [activeTab, setActiveTab] = useState<'upload' | 'manual'>('upload');
+  const panelRef = useRef<HTMLDivElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  // Bring the panel into view as it opens, so the upload box is right there.
+  useEffect(() => {
+    if (isOpen) panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [isOpen]);
   const [dragActive, setDragActive] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [rawText, setRawText] = useState('');
   const [parsedCandidates, setParsedCandidates] = useState<ParsedCandidate[]>([]);
   const [skipDuplicates, setSkipDuplicates] = useState(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Once a file (or pasted text) has been read, move on to checking the result.
+  const parsedCount = parsedCandidates.length;
+  useEffect(() => {
+    if (parsedCount > 0 && activeTab === 'upload') {
+      previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [parsedCount, fileName, activeTab]);
 
   if (!isOpen) return null;
 
@@ -285,7 +303,14 @@ export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
   const willImportCount = skipDuplicates ? totalValid - duplicateCount : totalValid;
 
   return (
-    <div className="rounded-2xl bg-white p-5 sm:p-6 border-2 border-[#4a4238] shadow-[3px_4px_0px_#4a4238] flex flex-col gap-4 animate-in fade-in duration-200">
+    <div
+      ref={panelRef}
+      className={`flex flex-col gap-4 animate-in fade-in duration-200 scroll-mt-44 ${
+        embedded
+          ? 'mt-5 pt-5 border-t-2 border-dashed border-[#e6dac5]'
+          : 'rounded-2xl bg-white p-5 sm:p-6 border-2 border-[#4a4238] shadow-[3px_4px_0px_#4a4238]'
+      }`}
+    >
       {/* Top Title & Close Bar */}
       <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#e6dac5]">
         <div className="flex items-center gap-2.5">
@@ -444,7 +469,7 @@ export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
 
       {/* Parsed Candidates Preview Table */}
       {parsedCandidates.length > 0 && (
-        <div className="rounded-xl bg-[#fdfaf5] p-4 border border-[#e6dac5] flex flex-col gap-3">
+        <div ref={previewRef} className="rounded-xl bg-[#fdfaf5] p-4 border border-[#e6dac5] flex flex-col gap-3 scroll-mt-44">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#e6dac5]">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-[#51582f]" />
