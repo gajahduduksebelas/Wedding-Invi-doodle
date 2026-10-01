@@ -129,6 +129,78 @@ create table if not exists site_settings_backup (
 );
 alter table site_settings_backup enable row level security;
 
+-- 8. Limits on guest wishes (the RSVP form enforces the same; anyone can insert).
+alter table wishes drop constraint if exists wishes_name_length;
+alter table wishes add constraint wishes_name_length check (char_length(btrim(name)) between 1 and 80);
+alter table wishes drop constraint if exists wishes_message_length;
+alter table wishes add constraint wishes_message_length check (char_length(btrim(message)) between 1 and 500);
+alter table wishes drop constraint if exists wishes_guest_count_range;
+alter table wishes add constraint wishes_guest_count_range check (guest_count between 1 and 10);
+
+-- 9. Several admins (CMS > Keamanan & Kata Sandi > Akun Admin). The account is
+-- created under Authentication > Users; add_admin grants it CMS access.
+-- Removing an admin: delete its row from the admins table.
+create or replace function public.list_admins()
+returns table (user_id uuid, email text, added_at timestamptz, is_me boolean)
+language sql stable security definer set search_path = public, auth
+as $$
+  select a.user_id, u.email::text, u.created_at, a.user_id = auth.uid()
+  from admins a join auth.users u on u.id = a.user_id
+  where public.is_admin()
+  order by u.created_at;
+$$;
+
+create or replace function public.add_admin(admin_email text)
+returns text
+language plpgsql security definer set search_path = public, auth
+as $$
+declare uid uuid;
+begin
+  if not public.is_admin() then raise exception 'not allowed'; end if;
+  select id into uid from auth.users where lower(email) = lower(trim(admin_email));
+  if uid is null then return 'not_found'; end if;
+  if exists (select 1 from admins where user_id = uid) then return 'already_admin'; end if;
+  insert into admins(user_id) values (uid);
+  return 'added';
+end $$;
+
+revoke all on function public.list_admins() from public, anon;
+revoke all on function public.add_admin(text) from public, anon;
+grant execute on function public.list_admins() to authenticated;
+grant execute on function public.add_admin(text) to authenticated;
+
+-- 10. Editing at the same time from several devices. The CMS saves only what
+-- changed: object columns merge their top-level keys, list/text columns are
+-- replaced when present. SECURITY INVOKER, so the update RLS policy applies.
+create or replace function public.patch_site_settings(patch jsonb)
+returns timestamptz
+language plpgsql security invoker set search_path = public
+as $$
+declare ts timestamptz;
+begin
+  update site_settings set
+    couple       = case when patch ? 'couple'       then coalesce(couple, '{}'::jsonb)       || (patch->'couple')       else couple end,
+    video_config = case when patch ? 'video_config' then coalesce(video_config, '{}'::jsonb) || (patch->'video_config') else video_config end,
+    dress_code   = case when patch ? 'dress_code'   then coalesce(dress_code, '{}'::jsonb)   || (patch->'dress_code')   else dress_code end,
+    events       = case when patch ? 'events'       then patch->'events'       else events end,
+    banks        = case when patch ? 'banks'        then patch->'banks'        else banks end,
+    photos       = case when patch ? 'photos'       then patch->'photos'       else photos end,
+    gift_address = case when patch ? 'gift_address' then patch->>'gift_address' else gift_address end,
+    updated_at   = now()
+  where id = 1
+  returning updated_at into ts;
+  if ts is null then raise exception 'settings row not found or not allowed'; end if;
+  return ts;
+end $$;
+revoke all on function public.patch_site_settings(jsonb) from public, anon;
+grant execute on function public.patch_site_settings(jsonb) to authenticated;
+
+-- Live updates between CMS devices (RLS still decides who receives what).
+do $$ begin
+  alter publication supabase_realtime add table public.site_settings, public.wa_guests, public.wishes;
+exception when duplicate_object then null;
+end $$;
+
 -- Seed the single settings row with placeholder defaults (CMS will overwrite via first save)
 insert into site_settings (id, couple, events, banks, photos, video_config, gift_address)
 values (

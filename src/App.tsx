@@ -12,6 +12,7 @@ import { RsvpSection } from './components/RsvpSection';
 import { ClosingSection } from './components/ClosingSection';
 import { DressCodeSection } from './components/DressCodeSection';
 import { useSectionMotion } from './lib/useSectionMotion';
+import { SettingsShape, buildPatch, applyPatch, mergeRemote, cloneSettings } from './lib/settingsSync';
 import { EnvelopeOpening } from './components/EnvelopeOpening';
 import { BottomNavigation } from './components/BottomNavigation';
 import { AudioPlayer, startBackgroundMusicFromGesture } from './components/AudioPlayer';
@@ -160,10 +161,14 @@ export default function App() {
   // Fetches the shared settings row + wishes so every visitor sees the same
   // CMS-edited content and RSVP list, instead of only their own browser's copy.
 
-  // JSON of the settings as last loaded from / saved to Supabase. The save
-  // effect compares against it so loading data (or a guest's browser
-  // re-rendering it) never triggers a write back to the database.
-  const lastSyncedSettingsRef = React.useRef<string | null>(null);
+  // The settings as last loaded from / saved to / received from Supabase. The
+  // save effect sends only what differs from it, so loading data (or a guest's
+  // browser re-rendering it) never writes back, and two admins editing at the
+  // same time only send their own changes (see lib/settingsSync).
+  const lastSyncedSettingsRef = React.useRef<SettingsShape | null>(null);
+  // Bumped when another device's changes are merged in, so CMS editors
+  // without unsaved edits reload them.
+  const [remoteRevision, setRemoteRevision] = useState(0);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   // Bumped by the CMS "save all" button to retry a failed save right away.
   const [saveRequest, setSaveRequest] = useState(0);
@@ -222,7 +227,7 @@ export default function App() {
         // Only mark as synced when the row actually held real content; an
         // empty seeded row should get populated by the first admin session.
         const rowHasContent = settingsRow.couple && Object.keys(settingsRow.couple).length > 0;
-        if (rowHasContent) lastSyncedSettingsRef.current = JSON.stringify(loaded);
+        if (rowHasContent) lastSyncedSettingsRef.current = cloneSettings(loaded as SettingsShape);
       }
       if (wishRes.data) {
         setWishes(
@@ -269,6 +274,92 @@ export default function App() {
     };
   }, [isCmsAuthenticated]);
 
+  // --- Live updates between admin devices ---
+  // While logged in to the CMS, changes saved on another device (settings,
+  // WhatsApp contacts, new wishes) are merged in within a second or two.
+  const latestSettingsRef = React.useRef<SettingsShape | null>(null);
+  latestSettingsRef.current = {
+    couple,
+    events,
+    banks,
+    photos,
+    video_config: videoConfig,
+    gift_address: giftAddress,
+    dress_code: dressCode,
+  } as unknown as SettingsShape;
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase || !isCmsAuthenticated) return;
+    const client = supabase;
+
+    const applyRemoteSettings = (row: Record<string, unknown>) => {
+      const local = latestSettingsRef.current;
+      if (!local || !lastSyncedSettingsRef.current) return;
+      const remote = {} as SettingsShape;
+      for (const key of ['couple', 'events', 'banks', 'photos', 'video_config', 'gift_address', 'dress_code'] as const) {
+        (remote as unknown as Record<string, unknown>)[key] = row[key];
+      }
+      const { next, synced, changed } = mergeRemote(local, lastSyncedSettingsRef.current, remote);
+      lastSyncedSettingsRef.current = synced;
+      if (changed.length === 0) return;
+      if (changed.includes('couple')) setCouple(next.couple as unknown as CoupleData);
+      if (changed.includes('events')) setEvents(next.events as EventDetail[]);
+      if (changed.includes('banks')) setBanks(next.banks as BankAccount[]);
+      if (changed.includes('photos')) setPhotos(next.photos as GalleryPhoto[]);
+      if (changed.includes('video_config')) setVideoConfig(next.video_config as unknown as VideoConfig);
+      if (changed.includes('gift_address')) setGiftAddress(next.gift_address);
+      if (changed.includes('dress_code')) setDressCode(next.dress_code as unknown as DressCodeConfig);
+      setRemoteRevision((n) => n + 1);
+    };
+
+    const mapWish = (w: any): Wish => ({
+      id: w.id,
+      name: w.name,
+      status: w.status,
+      guestCount: w.guest_count,
+      message: w.message,
+      createdAt: w.created_at,
+    });
+
+    const channel = client
+      .channel('cms-live-sync')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'site_settings' }, (payload) =>
+        applyRemoteSettings(payload.new as Record<string, unknown>)
+      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'wa_guests' }, (payload) => {
+        if (payload.eventType === 'DELETE') {
+          const id = (payload.old as { id?: string }).id;
+          if (id) setWaGuests((cur) => cur.filter((g) => g.id !== id));
+          return;
+        }
+        const row = mapWaGuestRow(payload.new);
+        setWaGuests((cur) => {
+          const i = cur.findIndex((g) => g.id === row.id);
+          if (i === -1) return [row, ...cur];
+          if (JSON.stringify(cur[i]) === JSON.stringify(row)) return cur;
+          const next = [...cur];
+          next[i] = row;
+          return next;
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'wishes' }, (payload) => {
+        if (payload.eventType === 'DELETE') {
+          const id = (payload.old as { id?: string }).id;
+          if (id) setWishes((cur) => cur.filter((w) => w.id !== id));
+          return;
+        }
+        if (payload.eventType === 'INSERT') {
+          const wish = mapWish(payload.new);
+          setWishes((cur) => (cur.some((w) => w.id === wish.id) ? cur : [wish, ...cur]));
+        }
+      })
+      .subscribe();
+
+    return () => {
+      client.removeChannel(channel);
+    };
+  }, [isCmsAuthenticated]);
+
   // --- Settings persistence ---
   // Mirror every change to localStorage (offline cache / local-only mode) and,
   // for a logged-in admin, save the settings row to Supabase. Saves are
@@ -295,7 +386,7 @@ export default function App() {
       gift_address: giftAddress,
       dress_code: dressCode,
     };
-    if (JSON.stringify(settings) === lastSyncedSettingsRef.current) {
+    if (!buildPatch(settings as unknown as SettingsShape, lastSyncedSettingsRef.current)) {
       // An edit that was undone before its save ran is already in sync.
       setSaveStatus((status) => (status === 'pending' ? 'saved' : status));
       return;
@@ -329,18 +420,25 @@ export default function App() {
         return;
       }
 
-      const { error } = await supabase!.from('site_settings').upsert({
-        id: 1,
-        ...settings,
-        updated_at: new Date().toISOString(),
-      });
+      // Send only what changed since the last sync; the database merges it
+      // into the row, so a partner's concurrent edits elsewhere are kept.
+      const current = settings as unknown as SettingsShape;
+      const patch = buildPatch(current, lastSyncedSettingsRef.current);
+      if (!patch) {
+        if (!cancelled) setSaveStatus('saved');
+        return;
+      }
+      const { error } = lastSyncedSettingsRef.current
+        ? await supabase!.rpc('patch_site_settings', { patch })
+        : // Nothing loaded yet (empty seeded row): write everything once.
+          await supabase!.from('site_settings').upsert({ id: 1, ...settings, updated_at: new Date().toISOString() });
       if (error) {
         console.error('[supabase] failed to save settings', error);
         if (!cancelled) setSaveStatus('error');
         showToast('⚠️ Gagal menyimpan perubahan ke server.', 'pause');
         return;
       }
-      lastSyncedSettingsRef.current = JSON.stringify(settings);
+      lastSyncedSettingsRef.current = applyPatch(lastSyncedSettingsRef.current, patch) ?? cloneSettings(current);
       if (!cancelled) setSaveStatus('saved');
     }, 700);
 
@@ -482,30 +580,45 @@ export default function App() {
     setWishes(newWishes);
   };
 
-  // WA guest list: diff against the current list, delete removed rows and
-  // upsert the rest. Ids created in the browser (sample data, the add form,
-  // CSV import) aren't uuids, so they get one before being stored.
+  // WA guest list: only the contacts that actually changed are written (and
+  // only removed ones deleted), and the change is applied on top of the latest
+  // list, so two admins editing or blasting at the same time on different
+  // devices never undo each other's work. Ids created in the browser (sample
+  // data, the add form, CSV import) aren't uuids, so they get one first.
   const handleUpdateWaGuests = async (newGuests: WhatsAppGuest[]) => {
     const normalized = newGuests.map((g) => (isUuid(g.id) ? g : { ...g, id: newUuid() }));
     const previous = waGuests;
-    setWaGuests(normalized);
+    const prevById = new Map(previous.map((g) => [g.id, g]));
+    const changed = normalized.filter((g) => {
+      const before = prevById.get(g.id);
+      return !before || JSON.stringify(before) !== JSON.stringify(g);
+    });
+    const nextIds = new Set(normalized.map((g) => g.id));
+    const removedIds = previous.map((g) => g.id).filter((id) => !nextIds.has(id));
+
+    setWaGuests((cur) => {
+      const changedById = new Map(changed.map((g) => [g.id, g]));
+      const removed = new Set(removedIds);
+      const kept = cur.filter((g) => !removed.has(g.id)).map((g) => changedById.get(g.id) ?? g);
+      const curIds = new Set(cur.map((g) => g.id));
+      const added = changed.filter((g) => !curIds.has(g.id));
+      return [...added, ...kept];
+    });
 
     if (!isSupabaseConfigured || !supabase) return;
 
-    const removedIds = previous
-      .map((g) => g.id)
-      .filter((id) => isUuid(id) && !normalized.some((g) => g.id === id));
-    if (removedIds.length > 0) {
-      const { error } = await supabase.from('wa_guests').delete().in('id', removedIds);
+    const dbRemoved = removedIds.filter(isUuid);
+    if (dbRemoved.length > 0) {
+      const { error } = await supabase.from('wa_guests').delete().in('id', dbRemoved);
       if (error) {
         console.error('[supabase] failed to delete wa_guests', error);
         showToast('⚠️ Gagal menghapus tamu dari server.', 'pause');
       }
     }
 
-    if (normalized.length > 0) {
+    if (changed.length > 0) {
       const { error } = await supabase.from('wa_guests').upsert(
-        normalized.map((g) => ({
+        changed.map((g) => ({
           id: g.id,
           name: g.name,
           phone: g.phone,
@@ -521,6 +634,30 @@ export default function App() {
         showToast('⚠️ Gagal menyimpan daftar tamu ke server.', 'pause');
       }
     }
+  };
+
+  // Marks a guest as sent only if nobody else has (another device may be
+  // blasting the same list). Returns false when the guest was already taken.
+  const handleClaimWaGuest = async (guestId: string, sentAt: string): Promise<'ok' | 'taken' | 'error'> => {
+    const markLocal = () =>
+      setWaGuests((cur) => cur.map((g) => (g.id === guestId ? { ...g, status: 'sent', sentAt } : g)));
+    if (!isSupabaseConfigured || !supabase || !isUuid(guestId)) {
+      markLocal();
+      return 'ok';
+    }
+    const { data, error } = await supabase
+      .from('wa_guests')
+      .update({ status: 'sent', sent_at: sentAt })
+      .eq('id', guestId)
+      .eq('status', 'pending')
+      .select('id');
+    if (error) {
+      console.error('[supabase] failed to claim wa_guest', error);
+      return 'error';
+    }
+    if (!data || data.length === 0) return 'taken';
+    markLocal();
+    return 'ok';
   };
 
   // Typing on a phone. The keyboard shrinks the visible screen, and every
@@ -799,6 +936,8 @@ export default function App() {
           onSaveDressCode={(newDressCode) => setDressCode(newDressCode)}
           onUpdateWishes={handleUpdateWishes}
           onUpdateWaGuests={handleUpdateWaGuests}
+          onClaimWaGuest={handleClaimWaGuest}
+          remoteRevision={remoteRevision}
           onSwitchToInvitation={handleSwitchToInvitation}
           onShowToast={showToast}
           saveStatus={saveStatus}

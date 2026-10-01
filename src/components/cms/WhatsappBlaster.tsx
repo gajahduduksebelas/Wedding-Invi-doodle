@@ -37,6 +37,8 @@ import {
 interface WhatsappBlasterProps {
   guests: WhatsAppGuest[];
   onUpdateGuests: (guests: WhatsAppGuest[]) => void;
+  /** Marks a guest as sent unless another device already did ('taken'). */
+  onClaimGuest?: (guestId: string, sentAt: string) => Promise<'ok' | 'taken' | 'error'>;
   couple: CoupleData;
   events: EventDetail[];
   onShowToast: (message: string, type?: 'success' | 'copy') => void;
@@ -45,6 +47,7 @@ interface WhatsappBlasterProps {
 export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
   guests,
   onUpdateGuests,
+  onClaimGuest,
   couple,
   events,
   onShowToast,
@@ -100,10 +103,6 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
   const pendingCount = totalGuests - sentCount;
   const progressPercent = totalGuests > 0 ? Math.round((sentCount / totalGuests) * 100) : 0;
 
-  // Next pending guest for queue blasting
-  const nextPendingGuest = useMemo(() => {
-    return guests.find((g) => g.status === 'pending');
-  }, [guests]);
 
   // Handle template selection
   const handleSelectTemplate = (template: WhatsAppTemplateItem) => {
@@ -139,7 +138,8 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
   };
 
   // Blast single guest via WhatsApp
-  const handleBlastGuest = (guest: WhatsAppGuest) => {
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const handleBlastGuest = async (guest: WhatsAppGuest) => {
     const personalizedLink = generateGuestUrl(guest.name);
     const message = composeWhatsAppMessage(customTemplateText, {
       nama: guest.name,
@@ -149,23 +149,48 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
       lokasi: weddingLocation,
       sesi: guest.session,
     });
-
     const waUrl = buildWhatsAppLink(guest.phone, message);
+    const sentAt = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
-    // Open WhatsApp Web / App
-    window.open(waUrl, '_blank', 'noopener,noreferrer');
+    // Re-sending to someone already marked as sent is a deliberate choice.
+    if (guest.status === 'sent') {
+      if (!confirm(`${guest.name} sudah ditandai terkirim. Kirim ulang undangannya?`)) return;
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+      onShowToast(`Undangan untuk ${guest.name} dibuka di WhatsApp! 📲`);
+      return;
+    }
 
-    // Mark as sent
-    const updated = guests.map((g) =>
-      g.id === guest.id
-        ? {
-            ...g,
-            status: 'sent' as const,
-            sentAt: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-          }
-        : g
-    );
-    onUpdateGuests(updated);
+    if (!onClaimGuest) {
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+      onUpdateGuests(guests.map((g) => (g.id === guest.id ? { ...g, status: 'sent' as const, sentAt } : g)));
+      onShowToast(`Undangan untuk ${guest.name} dibuka di WhatsApp! 📲`);
+      return;
+    }
+
+    // Another device may be blasting the same list: claim the guest first so
+    // nobody gets the invitation twice. The window is opened right away (still
+    // inside the tap, so it isn't blocked) and pointed at WhatsApp once the
+    // claim succeeds.
+    const win = window.open('', '_blank');
+    setSendingId(guest.id);
+    const result = await onClaimGuest(guest.id, sentAt);
+    setSendingId(null);
+    if (result === 'taken') {
+      win?.close();
+      onShowToast(`${guest.name} sudah dikirimi dari perangkat lain — dilewati. ✅`);
+      return;
+    }
+    if (result === 'error') {
+      win?.close();
+      onShowToast('⚠️ Gagal memperbarui status di server. Periksa koneksi lalu coba lagi.');
+      return;
+    }
+    if (win) {
+      win.opener = null;
+      win.location.href = waUrl;
+    } else {
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+    }
     onShowToast(`Undangan untuk ${guest.name} dibuka di WhatsApp! 📲`);
   };
 
@@ -305,6 +330,13 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
       return matchesSearch && matchesStatus && matchesCat;
     });
   }, [guests, searchQuery, statusFilter, categoryFilter, categories]);
+
+  // Next pending guest for queue blasting. It follows the search & category
+  // filter, so two people can blast at the same time by each taking a
+  // different category (or simply both run the queue — a guest that the
+  // other device already sent to is skipped).
+  const nextPendingGuest = useMemo(() => filteredGuests.find((g) => g.status === 'pending'), [filteredGuests]);
+  const queueIsFiltered = filteredGuests.length !== guests.length;
 
   const selectedCount = guests.filter((g) => selectedIds.has(g.id)).length;
   const allFilteredSelected = filteredGuests.length > 0 && filteredGuests.every((g) => selectedIds.has(g.id));
@@ -451,6 +483,11 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
             <div>
               <span className="text-[11px] font-bold text-[#51582f] uppercase tracking-wider block">
                 Antrean Blast Berikutnya
+                {queueIsFiltered && (
+                  <span className="ml-1.5 normal-case tracking-normal font-semibold text-[#7a7065]">
+                    · sesuai filter{activeCategoryFilter !== 'all' ? `: ${activeCategoryFilter}` : ''}
+                  </span>
+                )}
               </span>
               <h3 className="text-[18px] font-bold text-[#2b2620] font-heading">
                 {nextPendingGuest.name}
