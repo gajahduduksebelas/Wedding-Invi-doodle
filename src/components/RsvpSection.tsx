@@ -7,18 +7,17 @@ import { DoodleScatter } from './DoodleScatter';
 
 interface RsvpSectionProps {
   wishes: Wish[];
-  guestName: string;
   onAddWish: (newWish: Wish) => Promise<boolean>;
   onShowToast: (message: string) => void;
 }
 
 export const RsvpSection: React.FC<RsvpSectionProps> = ({
   wishes,
-  guestName,
   onAddWish,
   onShowToast,
 }) => {
-  const [rsvpName, setRsvpName] = useState(guestName || '');
+  // Starts empty: guests type their own name.
+  const [rsvpName, setRsvpName] = useState('');
   const [status, setStatus] = useState<'Hadir' | 'Masih Ragu' | 'Tidak Hadir'>('Hadir');
   const [guestCount, setGuestCount] = useState(1);
   const [wishText, setWishText] = useState('');
