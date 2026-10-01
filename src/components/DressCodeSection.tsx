@@ -2,6 +2,7 @@ import React from 'react';
 import { Heart } from 'lucide-react';
 import { DressCodeColor, DressCodeConfig } from '../types';
 import { SectionHeading } from './DoodleIcons';
+import { DoodleScatter } from './DoodleScatter';
 
 // Hand-drawn clothes hanger in the invitation's doodle style.
 const DoodleHanger: React.FC<{ className?: string }> = ({ className }) => (
@@ -100,8 +101,10 @@ export const DressCodeSection: React.FC<{ config: DressCodeConfig }> = ({ config
   <section
     id="dresscode"
     aria-label="Dress Code"
-    className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center select-none"
+    className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative isolate overflow-hidden select-none"
   >
+    <DoodleScatter seed="dresscode" prefer={['suit', 'weddingDress', 'heels', 'mensShoes']} />
+
     <div className="w-full max-w-[400px] flex flex-col items-center my-auto animate-doodle-in">
       <SectionHeading
         subheadline="Busana yang dianjurkan"

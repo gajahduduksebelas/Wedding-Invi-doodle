@@ -3,6 +3,7 @@ import { Send, User, Clock } from 'lucide-react';
 import { Wish } from '../types';
 import { SectionHeading } from './DoodleIcons';
 import { formatWishTime } from '../lib/utils';
+import { DoodleScatter } from './DoodleScatter';
 
 interface RsvpSectionProps {
   wishes: Wish[];
@@ -58,8 +59,10 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({
       <section
         id="rsvp"
         aria-label="Konfirmasi Kehadiran"
-        className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center select-none"
+        className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative isolate overflow-hidden select-none"
       >
+        <DoodleScatter seed="rsvp" prefer={['loveLetter', 'wineGlasses']} />
+
         <div className="w-full max-w-[400px] flex flex-col items-center my-auto animate-doodle-in">
           <SectionHeading
             subheadline="Konfirmasi kehadiran"
@@ -170,8 +173,10 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({
       <section
         id="wishes"
         aria-label="Daftar Ucapan dan Doa"
-        className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center select-none"
+        className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative isolate overflow-hidden select-none"
       >
+        <DoodleScatter seed="wishes" prefer={['doves', 'heartBalloons']} />
+
         <div className="w-full max-w-[400px] flex flex-col items-center my-auto animate-doodle-in">
           <SectionHeading
             subheadline="Doa terbaik"

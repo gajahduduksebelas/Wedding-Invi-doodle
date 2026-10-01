@@ -5,6 +5,7 @@ import {
   DoodleHeartBalloons,
   DoodleGiftBox,
 } from './DoodleIcons';
+import { DoodleScatter } from './DoodleScatter';
 
 interface ClosingSectionProps {
   couple?: CoupleData;
@@ -16,7 +17,8 @@ export const ClosingSection: React.FC<ClosingSectionProps> = ({ couple }) => {
   const weddingDate = couple?.weddingDate || 'Minggu, 14 Februari 2027';
 
   return (
-    <div className="mobile-snap-section w-full flex flex-col items-center select-none justify-center px-4 py-6">
+    <div className="mobile-snap-section w-full flex flex-col items-center select-none justify-center px-4 py-6 relative isolate overflow-hidden">
+      <DoodleScatter seed="closing" prefer={['weddingCake', 'doves', 'giftBox']} />
       {/* ============================================================ */}
       {/* 1. CLOSING SECTION                                           */}
       {/* ============================================================ */}

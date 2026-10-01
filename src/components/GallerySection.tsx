@@ -4,6 +4,7 @@ import { GalleryPhoto, VideoConfig } from '../types';
 import { PhotoLightbox } from './PhotoLightbox';
 import { DoodleBouquet, SectionHeading } from './DoodleIcons';
 import { Volume2, VolumeX } from 'lucide-react';
+import { DoodleScatter } from './DoodleScatter';
 
 interface GallerySectionProps {
   photos?: GalleryPhoto[];
@@ -198,8 +199,10 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
       ref={sectionRef}
       id="gallery"
       aria-label="Galeri Foto dan Video"
-      className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative select-none"
+      className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative isolate overflow-hidden select-none"
     >
+      <DoodleScatter seed="gallery" prefer={['roseBouquet', 'heartLollipops']} />
+
       {/* Flower Bouquet Doodle on Right */}
       <div className="absolute top-6 right-2 z-10 pointer-events-none opacity-85">
         <DoodleBouquet className="w-14 sm:w-16 h-auto" />

@@ -1,13 +1,16 @@
 import React from 'react';
 import { DoodleDiamondRing, SectionHeading } from './DoodleIcons';
+import { DoodleScatter } from './DoodleScatter';
 
 export const QuoteSection: React.FC = () => {
   return (
     <section
       id="quote"
       aria-label="Kutipan Pernikahan"
-      className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative select-none"
+      className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative isolate overflow-hidden select-none"
     >
+      <DoodleScatter seed="quote" prefer={['doves', 'rose', 'loveLetter']} />
+
       <div className="w-full max-w-[400px] relative pt-6 my-auto animate-doodle-in">
         {/* Doodle Diamond Ring perched on top center */}
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
