@@ -365,3 +365,84 @@ body {
     animation: none !important;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Scroll motion (useSectionMotion): each section's own content rises in
+   one after another as it scrolls into view, the heading underline draws
+   itself and the scattered doodles pop in, replaying every visit. Uses
+   Material 3 "emphasized decelerate" easing. Hidden pieces are only ever
+   off screen, so nothing visibly disappears. */
+.motion-ready .animate-doodle-in {
+  animation: none;
+}
+
+.motion-ready .reveal-item {
+  opacity: 0;
+}
+
+.motion-ready.is-active .reveal-item {
+  opacity: 1;
+  animation: sectionRevealUp 0.72s cubic-bezier(0.05, 0.7, 0.1, 1) backwards;
+  animation-delay: calc(var(--reveal-i, 0) * 75ms + 60ms);
+}
+
+@keyframes sectionRevealUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 26px, 0) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Heading underline draws itself once the heading is in */
+.motion-ready:not(.is-active) .animate-draw-underline {
+  animation: none;
+  stroke-dashoffset: 120;
+}
+
+.motion-ready.is-active .animate-draw-underline {
+  animation-delay: 0.38s;
+  animation-fill-mode: both;
+}
+
+/* Cover photo eases in from a slight zoom each time Home comes back */
+.motion-ready:not(.is-active) .animate-cover-in {
+  animation: none;
+  transform: scale(1.06);
+}
+
+/* Scattered doodles pop in after the content, with a little overshoot */
+.motion-ready .doodle-scatter-piece {
+  opacity: 0;
+  scale: 0.4;
+}
+
+.motion-ready.is-active .doodle-scatter-piece {
+  opacity: 1;
+  scale: 1;
+  animation: doodleScatterPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  animation-delay: calc(var(--pop-i, 0) * 70ms + 260ms);
+}
+
+@keyframes doodleScatterPop {
+  from {
+    opacity: 0;
+    scale: 0.4;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-ready .reveal-item,
+  .motion-ready .doodle-scatter-piece {
+    opacity: 1;
+    scale: 1;
+    animation: none !important;
+  }
+}

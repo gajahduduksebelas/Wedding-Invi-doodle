@@ -59,6 +59,8 @@ interface Placed {
   y: number;
   w: number;
   rot: number;
+  /** Parallax factor: how far it drifts relative to the section while scrolling. */
+  depth: number;
   float: boolean;
 }
 
@@ -89,7 +91,20 @@ const measure = (section: HTMLElement, layer: HTMLElement) => {
   const origin = section.getBoundingClientRect();
   const solid: Box[] = [];
   const bare: Box[] = [];
-  const toBox = (r: DOMRect): Box => ({ x: r.left - origin.left, y: r.top - origin.top, w: r.width, h: r.height });
+  // Content may be mid-way through its scroll entrance (useSectionMotion), so
+  // undo that temporary shift to measure where everything will come to rest.
+  const restingShift = (el: Element) => {
+    const moving = el.closest('.reveal-item');
+    if (!moving || !section.contains(moving)) return { x: 0, y: 0 };
+    const t = getComputedStyle(moving).transform;
+    if (!t || t === 'none') return { x: 0, y: 0 };
+    const m = new DOMMatrixReadOnly(t);
+    return { x: m.e, y: m.f };
+  };
+  const toBox = (r: DOMRect, el: Element): Box => {
+    const d = restingShift(el);
+    return { x: r.left - origin.left - d.x, y: r.top - origin.top - d.y, w: r.width, h: r.height };
+  };
   const solidEls = new Set<Element>();
 
   section.querySelectorAll<HTMLElement>('*').forEach((el) => {
@@ -101,7 +116,7 @@ const measure = (section: HTMLElement, layer: HTMLElement) => {
     const bordered = parseFloat(cs.borderTopWidth) >= 1 && parseFloat(cs.borderLeftWidth) >= 1;
     if (isOpaque(cs.backgroundColor) || bordered || /^(IMG|VIDEO|IFRAME)$/.test(el.tagName)) {
       solidEls.add(el);
-      solid.push(toBox(r));
+      solid.push(toBox(r, el));
     }
   });
 
@@ -116,7 +131,7 @@ const measure = (section: HTMLElement, layer: HTMLElement) => {
       const c = p.getBoundingClientRect();
       if (r.left >= c.left - 1 && r.right <= c.right + 1 && r.top >= c.top - 1 && r.bottom <= c.bottom + 1) return;
     }
-    bare.push(toBox(r));
+    bare.push(toBox(r, el));
   });
 
   return { width: section.clientWidth, height: section.scrollHeight, solid, bare };
@@ -172,7 +187,8 @@ const layout = (
       const y = between(8, height - h - BOTTOM_RESERVE);
       const box = { x, y, w, h };
       if (fits(box, 38)) {
-        placed.push({ key, x, y, w, rot: between(-18, 18), float: false });
+        const depth = between(0.05, 0.16) * (rand() < 0.3 ? -1 : 1);
+        placed.push({ key, x, y, w, rot: between(-18, 18), depth, float: false });
         boxes.push(box);
         return true;
       }
@@ -251,8 +267,18 @@ export const DoodleScatter: React.FC<DoodleScatterProps> = ({ seed, prefer = [] 
       {items.map((d, i) => (
         <div
           key={`${d.key}-${i}`}
-          className="absolute"
-          style={{ left: d.x, top: d.y, width: d.w, transform: `rotate(${d.rot.toFixed(1)}deg)` }}
+          className="absolute doodle-scatter-piece"
+          style={
+            {
+              left: d.x,
+              top: d.y,
+              width: d.w,
+              transform: `rotate(${d.rot.toFixed(1)}deg)`,
+              // Drifts with scroll (useSectionMotion sets --sp on the section).
+              translate: `0 calc(var(--sp, 0) * ${d.depth.toFixed(3)} * 1px)`,
+              '--pop-i': i,
+            } as React.CSSProperties
+          }
         >
           <img
             src={DOODLE[d.key]}
