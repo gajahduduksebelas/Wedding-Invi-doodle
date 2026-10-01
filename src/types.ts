@@ -115,7 +115,8 @@ export interface WhatsAppGuest {
   id: string;
   name: string;
   phone: string;
-  category: 'Keluarga' | 'Sahabat' | 'VIP' | 'Rekan Kerja' | 'Tetangga' | 'Umum';
+  /** Free text, taken from the uploaded CSV (or typed in the CMS). */
+  category: string;
   session: 'Akad & Resepsi' | 'Resepsi' | 'Akad Saja';
   status: 'pending' | 'sent';
   sentAt?: string;

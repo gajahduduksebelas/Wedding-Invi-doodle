@@ -165,6 +165,9 @@ export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
 
     const dataLines = isHeaderRow ? lines.slice(1) : lines;
     const existingNamesSet = new Set(existingGuests.map((g) => g.name.toLowerCase().trim()));
+    const knownCategories = new Map(
+      existingGuests.filter((g) => g.category).map((g) => [g.category.toLowerCase(), g.category] as const)
+    );
 
     const candidates: ParsedCandidate[] = [];
 
@@ -177,18 +180,12 @@ export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
       // Clean phone number: remove non-numeric chars except leading '+'
       const cleanPhone = rawPhone.replace(/[^\d+]/g, '');
 
-      const rawCat = cols[catIdx]?.trim() || 'Sahabat';
-      const validCategories: WhatsAppGuest['category'][] = [
-        'Keluarga',
-        'Sahabat',
-        'VIP',
-        'Rekan Kerja',
-        'Tetangga',
-        'Umum',
-      ];
-      const matchedCat = validCategories.find(
-        (c) => c.toLowerCase() === rawCat.toLowerCase()
-      ) || 'Sahabat';
+      // Categories come straight from the CSV. Spelling variants of one that
+      // already exists ("keluarga" vs "Keluarga") join it instead of
+      // starting a new one; an empty cell becomes "Umum".
+      const rawCat = (cols[catIdx] || '').trim().replace(/\s+/g, ' ');
+      const matchedCat = rawCat ? knownCategories.get(rawCat.toLowerCase()) || rawCat : 'Umum';
+      if (rawCat && !knownCategories.has(rawCat.toLowerCase())) knownCategories.set(rawCat.toLowerCase(), rawCat);
 
       const rawSession = cols[sessionIdx]?.trim() || 'Resepsi';
       let session: WhatsAppGuest['session'] = 'Resepsi';
