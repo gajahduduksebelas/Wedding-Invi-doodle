@@ -150,9 +150,11 @@ export function generateGuestUrl(guestName: string): string {
   if (typeof window === 'undefined') {
     return `https://undangan.example.com/?to=${encodeURIComponent(guestName)}`;
   }
-  const origin = window.location.origin;
-  const pathname = window.location.pathname;
-  return `${origin}${pathname}?to=${encodeURIComponent(guestName)}`;
+  // Always link to the invitation's public address (the canonical URL in
+  // index.html), even when the CMS is opened on a preview or local address.
+  const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href;
+  const base = canonical ? new URL(canonical) : window.location;
+  return `${base.origin}${base.pathname}?to=${encodeURIComponent(guestName)}`;
 }
 
 /**
@@ -172,7 +174,7 @@ export function composeWhatsAppMessage(
   let message = template;
   message = message.replace(/{nama}/g, variables.nama || 'Tamu Undangan');
   message = message.replace(/{link}/g, variables.link || '');
-  message = message.replace(/{pasangan}/g, variables.pasangan || 'Ahmad & Siti');
+  message = message.replace(/{pasangan}/g, variables.pasangan || 'kedua mempelai');
   message = message.replace(/{tanggal}/g, variables.tanggal || '');
   message = message.replace(/{lokasi}/g, variables.lokasi || '');
   message = message.replace(/{sesi}/g, variables.sesi || 'Akad & Resepsi');

@@ -89,7 +89,7 @@ export const GalleryEditor: React.FC<GalleryEditorProps> = ({
         id: `photo-${Date.now()}`,
         src: croppedDataUrl,
         title: newPhotoTitle.trim() || `Momen Bahagia #${photoList.length + 1}`,
-        alt: newPhotoTitle.trim() || 'Foto Prewedding Ahmad & Siti',
+        alt: newPhotoTitle.trim() || 'Foto prewedding',
         rotation: Math.random() > 0.5 ? 'rotate-1' : '-rotate-1',
       };
       setPhotoList((prev) => [newPhoto, ...prev]);
@@ -107,7 +107,7 @@ export const GalleryEditor: React.FC<GalleryEditorProps> = ({
       id: `photo-${Date.now()}`,
       src: newPhotoUrl.trim(),
       title: newPhotoTitle.trim() || `Momen Bahagia #${photoList.length + 1}`,
-      alt: newPhotoTitle.trim() || 'Foto Prewedding Ahmad & Siti',
+      alt: newPhotoTitle.trim() || 'Foto prewedding',
       rotation: Math.random() > 0.5 ? 'rotate-1' : '-rotate-1',
     };
 

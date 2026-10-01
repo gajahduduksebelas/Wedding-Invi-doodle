@@ -46,11 +46,18 @@ export const CountdownAndEvents: React.FC<CountdownAndEventsProps> = ({
     return () => clearInterval(interval);
   }, [activeCouple.targetTimestamp]);
 
-  const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=Pernikahan%20${encodeURIComponent(
-    `${activeCouple.groom.nickname} & ${activeCouple.bride.nickname}`
-  )}&dates=20270214T090000/20270214T140000&details=${encodeURIComponent(
+  // "Add to Google Calendar": starts at the countdown target, runs 5 hours
+  // (akad through resepsi), at the first event's venue.
+  const calendarStamp = (ms: number) => new Date(ms).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const calendarStart = activeCouple.targetTimestamp;
+  const calendarVenue = activeEvents[0]
+    ? [activeEvents[0].locationName, activeEvents[0].address].filter(Boolean).join(', ')
+    : activeCouple.weddingCity || '';
+  const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+    `Pernikahan ${activeCouple.groom.nickname} & ${activeCouple.bride.nickname}`
+  )}&dates=${calendarStamp(calendarStart)}/${calendarStamp(calendarStart + 5 * 60 * 60 * 1000)}&details=${encodeURIComponent(
     `Pernikahan ${activeCouple.groom.name} & ${activeCouple.bride.name}`
-  )}&location=${encodeURIComponent('Graha Manggala Siliwangi, Bandung')}`;
+  )}&location=${encodeURIComponent(calendarVenue)}`;
 
   return (
     <>
