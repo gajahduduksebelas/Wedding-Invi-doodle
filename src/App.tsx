@@ -896,7 +896,6 @@ export default function App() {
             {/* 10. RSVP & Doa Restu (#rsvp, #wishes) */}
             <RsvpSection
               wishes={wishes}
-              guestName={guestName}
               onAddWish={handleAddWish}
               onShowToast={(msg) => showToast(msg, 'success')}
             />

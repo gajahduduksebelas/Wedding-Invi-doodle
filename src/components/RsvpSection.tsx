@@ -7,18 +7,17 @@ import { DoodleScatter } from './DoodleScatter';
 
 interface RsvpSectionProps {
   wishes: Wish[];
-  guestName: string;
   onAddWish: (newWish: Wish) => Promise<boolean>;
   onShowToast: (message: string) => void;
 }
 
 export const RsvpSection: React.FC<RsvpSectionProps> = ({
   wishes,
-  guestName,
   onAddWish,
   onShowToast,
 }) => {
-  const [rsvpName, setRsvpName] = useState(guestName || '');
+  // Starts empty: guests type their own name.
+  const [rsvpName, setRsvpName] = useState('');
   const [status, setStatus] = useState<'Hadir' | 'Masih Ragu' | 'Tidak Hadir'>('Hadir');
   const [guestCount, setGuestCount] = useState(1);
   const [wishText, setWishText] = useState('');
@@ -90,15 +89,6 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({
                   maxLength={80}
                   value={rsvpName}
                   onChange={(e) => setRsvpName(e.target.value)}
-                  // The name from the invitation link is only a suggestion:
-                  // tapping the field clears it so the guest can type their
-                  // own, and leaving it empty puts the suggestion back.
-                  onFocus={() => {
-                    if (guestName && rsvpName === guestName) setRsvpName('');
-                  }}
-                  onBlur={() => {
-                    if (!rsvpName.trim() && guestName) setRsvpName(guestName);
-                  }}
                   placeholder="Masukkan nama lengkap Anda"
                   className="w-full px-3 py-2 rounded-xl border-[2px] border-[#181818] bg-white text-[12.5px] font-medium text-[#181818] focus:outline-none focus:bg-[#FAF7EE] shadow-[2px_2px_0px_#181818]"
                 />
