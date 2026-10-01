@@ -7,6 +7,7 @@ import {
   DoodleWeddingBells,
   SectionHeading,
 } from './DoodleIcons';
+import { DoodleScatter } from './DoodleScatter';
 
 interface CountdownAndEventsProps {
   couple?: CoupleData;
@@ -59,8 +60,10 @@ export const CountdownAndEvents: React.FC<CountdownAndEventsProps> = ({
       <section
         id="save-date"
         aria-label="Hitung Mundur"
-        className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center select-none"
+        className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative isolate overflow-hidden select-none"
       >
+        <DoodleScatter seed="save-date" prefer={['calendar', 'heartBalloons', 'loveLetter']} />
+
         <div className="w-full max-w-[400px] rounded-[28px] bg-[#EBD9A0] border-[2px] border-dashed border-[#181818] p-6 sm:p-7 relative my-auto animate-doodle-in">
           {/* Hanging Calendar Doodle on Top Right */}
           <div className="absolute -top-6 -right-2 z-10 pointer-events-none">
@@ -139,8 +142,10 @@ export const CountdownAndEvents: React.FC<CountdownAndEventsProps> = ({
       <section
         id="acara"
         aria-label="Detail Acara"
-        className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center select-none"
+        className="mobile-snap-section w-full px-4 py-6 flex flex-col items-center justify-center relative isolate overflow-hidden select-none"
       >
+        <DoodleScatter seed="acara" prefer={['wineGlasses', 'weddingBells', 'weddingCake']} />
+
         <div className="w-full max-w-[400px] flex flex-col items-center my-auto animate-doodle-in">
           <SectionHeading
             subheadline="Rangkaian prosesi"

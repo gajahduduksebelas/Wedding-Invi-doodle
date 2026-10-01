@@ -3,6 +3,7 @@ import { COUPLE_DATA, DEFAULT_COVER_IMAGE } from '../data/weddingData';
 import { CoupleData } from '../types';
 import { DoodleHeartBalloons } from './DoodleIcons';
 import { TornPaperEdge } from './PaperEdge';
+import { DoodleScatter } from './DoodleScatter';
 
 interface AnnouncementSectionProps {
   onScrollNext: () => void;
@@ -20,8 +21,10 @@ export const AnnouncementSection: React.FC<AnnouncementSectionProps> = ({ couple
     <section
       id="home"
       aria-label="Pembuka Undangan"
-      className="mobile-snap-section w-full flex flex-col items-center justify-start! relative overflow-hidden select-none"
+      className="mobile-snap-section w-full flex flex-col items-center justify-start! relative overflow-hidden isolate select-none"
     >
+      <DoodleScatter seed="home" prefer={['holdingHands', 'heartArrow']} />
+
       {/* Cover photo: the top half of the screen, cropped 1:1 in the CMS,
           with paper grain and a torn-paper edge into the page below. */}
       <div className="relative w-full max-w-[460px] shrink-0">

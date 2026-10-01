@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GalleryPhoto } from '../types';
 
@@ -40,7 +41,9 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
     onSelectPhoto(photos[nextIdx]);
   };
 
-  return (
+  // Rendered at the page root so it always sits above the bottom nav, even
+  // though the gallery section is its own stacking context.
+  return createPortal(
     <div className="fixed inset-0 z-50 bg-[#211b12]/85 backdrop-blur-sm flex items-center justify-center p-4">
       {/* Close button */}
       <button
@@ -90,6 +93,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
