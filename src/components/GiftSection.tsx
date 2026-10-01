@@ -73,7 +73,8 @@ export const GiftSection: React.FC<GiftSectionProps> = ({
                 </p>
 
                 <p className="text-[11.5px] font-medium text-stone-600">
-                  a.n. {bank.holderName || bank.accountHolder}
+                  {/* Names are often typed with their own "a.n" — don't show it twice. */}
+                  a.n. {(bank.holderName || bank.accountHolder || '').replace(/^\s*(a\.\s*n|an\.)\.?\s+/i, '').trim()}
                 </p>
 
                 <button

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Send,
   Plus,
@@ -19,6 +20,8 @@ import {
   Eye,
   Sliders,
   Share2,
+  Pencil,
+  X,
 } from 'lucide-react';
 import { WhatsAppGuest, CoupleData, EventDetail } from '../../types';
 import { GuestCsvImporter, downloadGuestCsvTemplate } from './GuestCsvImporter';
@@ -60,7 +63,7 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
   // Add Single Guest Form
   const [singleName, setSingleName] = useState('');
   const [singlePhone, setSinglePhone] = useState('');
-  const [singleCategory, setSingleCategory] = useState<WhatsAppGuest['category']>('Sahabat');
+  const [singleCategory, setSingleCategory] = useState('');
   const [singleSession, setSingleSession] = useState<WhatsAppGuest['session']>('Resepsi');
   const [singleNotes, setSingleNotes] = useState('');
 
@@ -72,6 +75,19 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
 
   // Copied indicator
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Bulk selection & editing
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [editing, setEditing] = useState<WhatsAppGuest | null>(null);
+
+  // Categories are whatever the contacts use (from the CSV or typed by hand).
+  const categories = useMemo(
+    () =>
+      Array.from(new Set(guests.map((g) => g.category?.trim()).filter((c): c is string => !!c))).sort((a, b) =>
+        a.localeCompare(b, 'id')
+      ),
+    [guests]
+  );
 
   // Couple details for placeholders
   const coupleName = `${couple.groom.nickname} & ${couple.bride.nickname}`;
@@ -108,7 +124,7 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
       id: `g-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       name: singleName.trim(),
       phone: singlePhone.trim(),
-      category: singleCategory,
+      category: singleCategory.trim() || 'Umum',
       session: singleSession,
       status: 'pending',
       notes: singleNotes.trim(),
@@ -116,6 +132,7 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
 
     onUpdateGuests([newGuest, ...guests]);
     setSingleName('');
+    setSingleCategory('');
     setSinglePhone('');
     setSingleNotes('');
     onShowToast(`Tamu "${newGuest.name}" berhasil ditambahkan! 🎉`);
@@ -176,6 +193,45 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
     }
   };
 
+  // --- Bulk selection ---
+  const toggleSelected = (guestId: string) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(guestId)) next.delete(guestId);
+      else next.add(guestId);
+      return next;
+    });
+
+  const handleBulkDelete = () => {
+    const ids = guests.filter((g) => selectedIds.has(g.id)).map((g) => g.id);
+    if (ids.length === 0) return;
+    if (confirm(`Hapus ${ids.length} kontak terpilih dari daftar blast? Tindakan ini tidak bisa dibatalkan.`)) {
+      onUpdateGuests(guests.filter((g) => !selectedIds.has(g.id)));
+      setSelectedIds(new Set());
+      onShowToast(`${ids.length} kontak dihapus.`);
+    }
+  };
+
+  // --- Edit a contact ---
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editing) return;
+    if (!editing.name.trim()) {
+      onShowToast('Nama tamu tidak boleh kosong');
+      return;
+    }
+    const cleaned: WhatsAppGuest = {
+      ...editing,
+      name: editing.name.trim(),
+      phone: editing.phone.replace(/[^\d+]/g, ''),
+      category: editing.category.trim() || 'Umum',
+      notes: editing.notes?.trim() || undefined,
+    };
+    onUpdateGuests(guests.map((g) => (g.id === cleaned.id ? cleaned : g)));
+    setEditing(null);
+    onShowToast(`Kontak "${cleaned.name}" diperbarui ✏️`);
+  };
+
   // Copy message
   const handleCopyMessage = (guest: WhatsAppGuest) => {
     const link = generateGuestUrl(guest.name);
@@ -192,7 +248,7 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
       navigator.clipboard.writeText(msg).catch(() => {});
     }
     setCopiedId(`msg-${guest.id}`);
-    onShowToast(`Pesan WhatsApp untuk ${guest.name} disalin! 📋`, 'copy');
+    onShowToast(`Undangan untuk ${guest.name} disalin! 📋`, 'copy');
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -244,11 +300,25 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
         statusFilter === 'all' ? true : g.status === statusFilter;
 
       const matchesCat =
-        categoryFilter === 'all' ? true : g.category === categoryFilter;
+        categoryFilter === 'all' || !categories.includes(categoryFilter) ? true : g.category === categoryFilter;
 
       return matchesSearch && matchesStatus && matchesCat;
     });
-  }, [guests, searchQuery, statusFilter, categoryFilter]);
+  }, [guests, searchQuery, statusFilter, categoryFilter, categories]);
+
+  const selectedCount = guests.filter((g) => selectedIds.has(g.id)).length;
+  const allFilteredSelected = filteredGuests.length > 0 && filteredGuests.every((g) => selectedIds.has(g.id));
+  const toggleSelectAllFiltered = () =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allFilteredSelected) filteredGuests.forEach((g) => next.delete(g.id));
+      else filteredGuests.forEach((g) => next.add(g.id));
+      return next;
+    });
+
+  // A filter on a category that no longer exists (all its contacts deleted
+  // or renamed) falls back to "all".
+  const activeCategoryFilter = categoryFilter === 'all' || categories.includes(categoryFilter) ? categoryFilter : 'all';
 
   // Current preview guest for chat bubble
   const activeGuestForPreview =
@@ -604,18 +674,20 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
             <label className="text-[11px] font-bold text-[#7a7065] block uppercase">
               Kategori
             </label>
-            <select
+            <input
+              type="text"
+              list="wa-guest-categories"
               value={singleCategory}
-              onChange={(e) => setSingleCategory(e.target.value as WhatsAppGuest['category'])}
+              onChange={(e) => setSingleCategory(e.target.value)}
+              placeholder="Umum"
+              maxLength={40}
               className="w-full mt-1 px-2.5 py-2 rounded-xl border border-[#4a4238] bg-[#fdfaf5] text-[12px] font-bold text-[#2b2620] focus:outline-none"
-            >
-              <option value="Sahabat">Sahabat</option>
-              <option value="Keluarga">Keluarga</option>
-              <option value="VIP">VIP</option>
-              <option value="Rekan Kerja">Rekan Kerja</option>
-              <option value="Tetangga">Tetangga</option>
-              <option value="Umum">Umum</option>
-            </select>
+            />
+            <datalist id="wa-guest-categories">
+              {categories.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
           </div>
 
           <div className="sm:col-span-2">
@@ -706,19 +778,53 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
 
           <div className="sm:col-span-3">
             <select
-              value={categoryFilter}
+              value={activeCategoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="w-full py-1.5 px-2 rounded-xl border border-[#4a4238] bg-[#fdfaf5] text-[11px] font-bold text-[#2b2620] focus:outline-none"
             >
-              <option value="all">Semua Kategori</option>
-              <option value="VIP">VIP</option>
-              <option value="Sahabat">Sahabat</option>
-              <option value="Keluarga">Keluarga</option>
-              <option value="Rekan Kerja">Rekan Kerja</option>
-              <option value="Tetangga">Tetangga</option>
-              <option value="Umum">Umum</option>
+              <option value="all">Semua Kategori ({guests.length})</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c} ({guests.filter((g) => g.category === c).length})
+                </option>
+              ))}
             </select>
           </div>
+        </div>
+
+        {/* Selection bar: select all (filtered) + bulk delete */}
+        <div className="flex flex-wrap items-center justify-between gap-2 mt-2 px-3 py-2 rounded-xl bg-[#fdfaf5] border border-[#e6dac5]">
+          <label className="inline-flex items-center gap-2 text-[12px] font-bold text-[#2b2620] cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={allFilteredSelected}
+              onChange={toggleSelectAllFiltered}
+              disabled={filteredGuests.length === 0}
+              className="w-4 h-4 accent-[#cc3a63] cursor-pointer shrink-0"
+              aria-label="Pilih semua kontak yang tampil"
+            />
+            Pilih semua{filteredGuests.length !== guests.length ? ' (hasil filter)' : ''}
+          </label>
+          {selectedCount > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-[12px] font-bold text-[#cc3a63]">{selectedCount} dipilih</span>
+              <button
+                type="button"
+                onClick={() => setSelectedIds(new Set())}
+                className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-[#2b2620] bg-white border border-[#e6dac5] hover:bg-[#f9f0e0] cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkDelete}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold text-white bg-[#cc3a63] hover:bg-[#b52d53] border border-[#4a4238] cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Hapus Terpilih
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Mobile View: Clean Touch Cards (sm:hidden) */}
@@ -735,7 +841,14 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
                   className="rounded-xl bg-[#fdfaf5] p-3 border border-[#e6dac5] shadow-xs flex flex-col gap-2.5"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(g.id)}
+                      onChange={() => toggleSelected(g.id)}
+                      className="w-4 h-4 accent-[#cc3a63] cursor-pointer shrink-0 mt-1"
+                      aria-label={`Pilih ${g.name}`}
+                    />
+                    <div className="flex-1 min-w-0">
                       <span className="text-[14px] font-bold text-[#2b2620] block">
                         {g.name}
                       </span>
@@ -756,64 +869,85 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
                     </span>
                   </div>
 
-                  {/* Actions Bar for Mobile */}
-                  <div className="flex items-center gap-2 pt-2 border-t border-[#f0e6d6]">
-                    {/* Status Pill Toggle */}
-                    <button
-                      type="button"
-                      onClick={() => handleToggleStatus(g.id)}
-                      className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
-                        isSent
-                          ? 'bg-[#f0f3e3] text-[#51582f] border border-[#a2ab73]'
-                          : 'bg-[#fff7eb] text-[#966b2d] border border-[#ecd9be]'
-                      }`}
-                    >
-                      {isSent ? (
-                        <>
-                          <CheckCircle2 className="w-3.5 h-3.5 text-[#51582f]" />
-                          <span>Terkirim</span>
-                        </>
-                      ) : (
-                        <>
-                          <Clock className="w-3.5 h-3.5 text-[#966b2d]" />
-                          <span>Belum</span>
-                        </>
-                      )}
-                    </button>
+                  {/* Actions for Mobile: send & copy first, then the small tools */}
+                  <div className="flex flex-col gap-2 pt-2 border-t border-[#f0e6d6]">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleBlastGuest(g)}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#25d366] active:bg-[#20ba5a] text-white text-[12px] font-bold shadow-xs transition-all cursor-pointer whitespace-nowrap"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Kirim WA</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyMessage(g)}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#f9f0e0] active:bg-[#edd9bf] text-[#2b2620] text-[12px] font-bold border border-[#e6dac5] cursor-pointer whitespace-nowrap"
+                      >
+                        {isCopiedMsg ? <Check className="w-3.5 h-3.5 text-[#51582f]" /> : <Copy className="w-3.5 h-3.5 text-[#cc3a63]" />}
+                        <span>{isCopiedMsg ? 'Tersalin' : 'Copy Undangan'}</span>
+                      </button>
+                    </div>
 
-                    {/* Blast WhatsApp Button */}
-                    <button
-                      type="button"
-                      onClick={() => handleBlastGuest(g)}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#25d366] active:bg-[#20ba5a] text-white text-[12px] font-bold shadow-xs transition-all cursor-pointer"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>Kirim WA</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {/* Status Pill Toggle */}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleStatus(g.id)}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
+                          isSent
+                            ? 'bg-[#f0f3e3] text-[#51582f] border border-[#a2ab73]'
+                            : 'bg-[#fff7eb] text-[#966b2d] border border-[#ecd9be]'
+                        }`}
+                      >
+                        {isSent ? (
+                          <>
+                            <CheckCircle2 className="w-3.5 h-3.5 text-[#51582f]" />
+                            <span>Terkirim</span>
+                          </>
+                        ) : (
+                          <>
+                            <Clock className="w-3.5 h-3.5 text-[#966b2d]" />
+                            <span>Belum</span>
+                          </>
+                        )}
+                      </button>
 
-                    {/* Copy Link */}
-                    <button
-                      type="button"
-                      onClick={() => handleCopyLink(g)}
-                      className="p-2 rounded-xl bg-white hover:bg-[#f9f0e0] text-[#2b2620] border border-[#e6dac5] cursor-pointer"
-                      title="Salin Tautan"
-                    >
-                      {isCopiedLnk ? (
-                        <Check className="w-4 h-4 text-[#51582f]" />
-                      ) : (
-                        <ExternalLink className="w-4 h-4 text-[#a2ab73]" />
-                      )}
-                    </button>
+                      <div className="flex-1" />
 
-                    {/* Delete */}
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteGuest(g.id, g.name)}
-                      className="p-2 rounded-xl text-[#cc3a63] hover:bg-[#fcecf0] cursor-pointer"
-                      title="Hapus"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditing({ ...g })}
+                        className="p-2 rounded-xl bg-white hover:bg-[#f9f0e0] text-[#2b2620] border border-[#e6dac5] cursor-pointer"
+                        title="Edit kontak"
+                        aria-label={`Edit ${g.name}`}
+                      >
+                        <Pencil className="w-4 h-4 text-[#7a7065]" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyLink(g)}
+                        className="p-2 rounded-xl bg-white hover:bg-[#f9f0e0] text-[#2b2620] border border-[#e6dac5] cursor-pointer"
+                        title="Salin Tautan"
+                        aria-label={`Salin tautan ${g.name}`}
+                      >
+                        {isCopiedLnk ? (
+                          <Check className="w-4 h-4 text-[#51582f]" />
+                        ) : (
+                          <ExternalLink className="w-4 h-4 text-[#a2ab73]" />
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteGuest(g.id, g.name)}
+                        className="p-2 rounded-xl text-[#cc3a63] hover:bg-[#fcecf0] cursor-pointer"
+                        title="Hapus"
+                        aria-label={`Hapus ${g.name}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -827,9 +961,19 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
 
         {/* Desktop View Table (hidden sm:block) */}
         <div className="hidden sm:block overflow-x-auto mt-2 -mx-5 px-5">
-          <table className="w-full text-left text-[12px] border-collapse min-w-[620px]">
+          <table className="w-full text-left text-[12px] border-collapse min-w-[760px]">
             <thead>
               <tr className="border-b-2 border-[#4a4238] text-[#7a7065] font-bold uppercase text-[10px]">
+                <th className="py-2.5 px-2 w-8">
+                  <input
+                    type="checkbox"
+                    checked={allFilteredSelected}
+                    onChange={toggleSelectAllFiltered}
+                    disabled={filteredGuests.length === 0}
+                    className="w-4 h-4 accent-[#cc3a63] cursor-pointer shrink-0"
+                    aria-label="Pilih semua kontak yang tampil"
+                  />
+                </th>
                 <th className="py-2.5 px-2">Nama Tamu</th>
                 <th className="py-2.5 px-2">Nomor WA</th>
                 <th className="py-2.5 px-2">Kategori</th>
@@ -849,6 +993,15 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
                       key={g.id}
                       className="hover:bg-[#fbf7f0] transition-colors group"
                     >
+                      <td className="py-2.5 px-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(g.id)}
+                          onChange={() => toggleSelected(g.id)}
+                          className="w-4 h-4 accent-[#cc3a63] cursor-pointer shrink-0"
+                          aria-label={`Pilih ${g.name}`}
+                        />
+                      </td>
                       <td className="py-2.5 px-2 font-bold text-[#2b2620]">
                         <div className="flex flex-col">
                           <span className="text-[13px]">{g.name}</span>
@@ -908,18 +1061,30 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
                             <span>Kirim WA</span>
                           </button>
 
-                          {/* Copy Message */}
+                          {/* Copy the full invitation message */}
                           <button
                             type="button"
                             onClick={() => handleCopyMessage(g)}
-                            className="p-1.5 rounded-lg bg-[#f9f0e0] hover:bg-[#edd9bf] text-[#2b2620] border border-[#e6dac5] cursor-pointer"
-                            title="Salin teks pesan"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#f9f0e0] hover:bg-[#edd9bf] text-[#2b2620] text-[11px] font-bold border border-[#e6dac5] cursor-pointer whitespace-nowrap"
+                            title="Salin teks undangan lengkap"
                           >
                             {isCopiedMsg ? (
-                              <Check className="w-3.5 h-3.5 text-[#51582f]" />
+                              <Check className="w-3 h-3 text-[#51582f]" />
                             ) : (
-                              <Copy className="w-3.5 h-3.5 text-[#cc3a63]" />
+                              <Copy className="w-3 h-3 text-[#cc3a63]" />
                             )}
+                            <span>{isCopiedMsg ? 'Tersalin' : 'Copy Undangan'}</span>
+                          </button>
+
+                          {/* Edit */}
+                          <button
+                            type="button"
+                            onClick={() => setEditing({ ...g })}
+                            className="p-1.5 rounded-lg bg-[#f9f0e0] hover:bg-[#edd9bf] text-[#2b2620] border border-[#e6dac5] cursor-pointer"
+                            title="Edit kontak"
+                            aria-label={`Edit ${g.name}`}
+                          >
+                            <Pencil className="w-3.5 h-3.5 text-[#7a7065]" />
                           </button>
 
                           {/* Copy URL */}
@@ -952,7 +1117,7 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
                 })
               ) : (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-[#7a7065]">
+                  <td colSpan={6} className="py-8 text-center text-[#7a7065]">
                     Tidak ada data tamu yang cocok dengan pencarian / filter.
                   </td>
                 </tr>
@@ -961,6 +1126,110 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
           </table>
         </div>
       </div>
+
+      {/* Edit contact (rendered at the page root so it sits above the CMS header) */}
+      {editing && createPortal(
+        <div
+          className="fixed inset-0 z-[80] bg-[#2b2620]/50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => setEditing(null)}
+        >
+          <form
+            onSubmit={handleSaveEdit}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full sm:max-w-[460px] bg-white rounded-t-3xl sm:rounded-2xl border-2 border-[#4a4238] shadow-[3px_4px_0px_#4a4238] p-5 flex flex-col gap-3 max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-[17px] font-bold text-[#2b2620] font-heading">Edit Kontak</h3>
+              <button
+                type="button"
+                onClick={() => setEditing(null)}
+                className="p-1.5 rounded-lg text-[#7a7065] hover:bg-[#f9f0e0] cursor-pointer"
+                aria-label="Tutup"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <label className="text-[11px] font-bold text-[#7a7065] uppercase">
+              Nama Tamu
+              <input
+                type="text"
+                value={editing.name}
+                onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                maxLength={80}
+                autoFocus
+                className="w-full mt-1 px-3 py-2 rounded-xl border border-[#4a4238] bg-[#fdfaf5] text-[13px] font-medium normal-case text-[#2b2620] focus:outline-none focus:ring-2 focus:ring-[#cc3a63]"
+              />
+            </label>
+
+            <label className="text-[11px] font-bold text-[#7a7065] uppercase">
+              Nomor WhatsApp
+              <input
+                type="tel"
+                value={editing.phone}
+                onChange={(e) => setEditing({ ...editing, phone: e.target.value })}
+                placeholder="0812xxxx atau 62812xxxx"
+                className="w-full mt-1 px-3 py-2 rounded-xl border border-[#4a4238] bg-[#fdfaf5] text-[13px] font-mono normal-case text-[#2b2620] focus:outline-none focus:ring-2 focus:ring-[#cc3a63]"
+              />
+            </label>
+
+            <div className="grid grid-cols-2 gap-3">
+              <label className="text-[11px] font-bold text-[#7a7065] uppercase">
+                Kategori
+                <input
+                  type="text"
+                  list="wa-guest-categories"
+                  value={editing.category}
+                  onChange={(e) => setEditing({ ...editing, category: e.target.value })}
+                  placeholder="Umum"
+                  maxLength={40}
+                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[#4a4238] bg-[#fdfaf5] text-[13px] font-bold normal-case text-[#2b2620] focus:outline-none focus:ring-2 focus:ring-[#cc3a63]"
+                />
+              </label>
+              <label className="text-[11px] font-bold text-[#7a7065] uppercase">
+                Sesi
+                <select
+                  value={editing.session}
+                  onChange={(e) => setEditing({ ...editing, session: e.target.value as WhatsAppGuest['session'] })}
+                  className="w-full mt-1 px-2.5 py-2 rounded-xl border border-[#4a4238] bg-[#fdfaf5] text-[13px] font-bold normal-case text-[#2b2620] focus:outline-none"
+                >
+                  <option value="Resepsi">Resepsi</option>
+                  <option value="Akad & Resepsi">Akad &amp; Resepsi</option>
+                  <option value="Akad Saja">Akad Saja</option>
+                </select>
+              </label>
+            </div>
+
+            <label className="text-[11px] font-bold text-[#7a7065] uppercase">
+              Catatan
+              <input
+                type="text"
+                value={editing.notes || ''}
+                onChange={(e) => setEditing({ ...editing, notes: e.target.value })}
+                placeholder="Opsional"
+                className="w-full mt-1 px-3 py-2 rounded-xl border border-[#4a4238] bg-[#fdfaf5] text-[13px] normal-case text-[#2b2620] focus:outline-none focus:ring-2 focus:ring-[#cc3a63]"
+              />
+            </label>
+
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setEditing(null)}
+                className="px-4 py-2 rounded-xl bg-[#f9f0e0] hover:bg-[#edd9bf] text-[#2b2620] text-[12px] font-bold border border-[#4a4238] cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-xl bg-[#cc3a63] hover:bg-[#b52d53] text-white text-[13px] font-bold shadow-[2px_2px_0px_#4a4238] border border-[#4a4238] cursor-pointer"
+              >
+                Simpan
+              </button>
+            </div>
+          </form>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };
