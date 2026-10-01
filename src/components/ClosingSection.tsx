@@ -1,10 +1,6 @@
 import React from 'react';
 import { CoupleData } from '../types';
-import {
-  DoodleKissingBirds,
-  DoodleHeartBalloons,
-  DoodleGiftBox,
-} from './DoodleIcons';
+import { DoodleGiftBox } from './DoodleIcons';
 import { DoodleScatter } from './DoodleScatter';
 
 interface ClosingSectionProps {
@@ -18,7 +14,7 @@ export const ClosingSection: React.FC<ClosingSectionProps> = ({ couple }) => {
 
   return (
     <div className="mobile-snap-section w-full flex flex-col items-center select-none justify-center px-4 py-6 relative isolate overflow-hidden">
-      <DoodleScatter seed="closing" prefer={['weddingCake', 'doves', 'giftBox']} />
+      <DoodleScatter seed="closing" prefer={['weddingCake', 'doves', 'wineGlasses', 'heartBalloons']} />
       {/* ============================================================ */}
       {/* 1. CLOSING SECTION                                           */}
       {/* ============================================================ */}
@@ -27,50 +23,35 @@ export const ClosingSection: React.FC<ClosingSectionProps> = ({ couple }) => {
         aria-label="Penutup"
         className="w-full max-w-[400px] flex flex-col items-center justify-center text-center relative my-auto animate-doodle-in"
       >
+        {/* Kept to two fonts: the hand-drawn display face for the one headline,
+            Plus Jakarta Sans for everything else. */}
         <div className="w-full flex flex-col items-center relative z-20">
-          {/* Hand-drawn mail doodle */}
-          <div className="mb-2">
+          <div className="mb-3">
             <DoodleGiftBox className="w-14 sm:w-16 h-auto" />
           </div>
 
-          {/* "Terima kasih" in Allura */}
-          <p className="font-allura text-[36px] sm:text-[42px] text-[#B4533C] leading-none mb-1">
-            Terima kasih
-          </p>
+          <h2 className="font-delicious text-[40px] sm:text-[44px] text-[#181818] uppercase tracking-wide leading-none">
+            Terima Kasih
+          </h2>
 
-          <p className="text-[12px] sm:text-[12.5px] text-stone-700 max-w-[330px] leading-relaxed my-2 font-normal">
+          <p className="text-[12.5px] text-stone-700 max-w-[320px] leading-relaxed mt-3">
             Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.
           </p>
 
-          {/* Couple Names */}
-          <h2 className="font-serif text-[26px] sm:text-[30px] font-normal text-[#B4533C] mt-1">
+          <p className="mt-4 text-[17px] font-bold text-[#B4533C] tracking-wide">
             {groomNickname} &amp; {brideNickname}
-          </h2>
-
-          <p className="font-serif text-[12px] text-stone-600">
+          </p>
+          <p className="text-[11.5px] font-medium text-stone-500 mt-0.5">
             {weddingDate}
           </p>
 
-          {/* Kissing Birds and Heart Balloon Doodles */}
-          <div className="w-full flex items-center justify-between mt-3 px-2">
-            <DoodleKissingBirds className="w-18 sm:w-22 h-auto" />
-            <DoodleHeartBalloons className="w-12 sm:w-14 h-auto" />
-          </div>
-
-          {/* Bottom Card in Sand/Mustard tone matching IMG_2713.PNG */}
-          <div className="w-full rounded-[24px] bg-[#EBD9A0] border-[2px] border-[#181818] shadow-[5px_5px_0px_#181818] p-5 mt-3 flex flex-col items-center text-center">
-            {/* Pill Tag */}
-            <div className="px-3.5 py-0.5 rounded-full bg-white border-[1.5px] border-[#181818] text-[11px] font-black text-[#181818] mb-2">
+          {/* Footer card */}
+          <div className="w-full rounded-[24px] bg-[#EBD9A0] border-[2px] border-[#181818] shadow-[5px_5px_0px_#181818] px-5 py-4 mt-6 flex flex-col items-center text-center">
+            <span className="px-3 py-0.5 rounded-full bg-white border-[1.5px] border-[#181818] text-[11px] font-bold text-[#181818]">
               #{groomNickname}&amp;{brideNickname}
-            </div>
-
-            <p className="text-[13.5px] font-black text-[#181818]">
-              {groomNickname} &amp; {brideNickname} Wedding Celebration
-            </p>
-
-            {/* Subtext in Allura cursive */}
-            <p className="font-allura text-[22px] sm:text-[24px] text-[#B4533C] mt-1 leading-snug">
-              Dibuat oleh Fadly dan Anna dengan cinta dan senyuman
+            </span>
+            <p className="mt-2.5 text-[13px] font-semibold text-[#181818] leading-relaxed max-w-[280px]">
+              Dibuat oleh Fadly dan Anna dengan cinta dan senyuman, juga teknologi sih hehe
             </p>
           </div>
         </div>
