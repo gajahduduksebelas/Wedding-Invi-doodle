@@ -54,3 +54,10 @@ export const formatWishTime = (value: string): string => {
   if (days < 7) return `${days} hari lalu`;
   return new Date(time).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 };
+
+/**
+ * True when Supabase rejected a request because of the login it carried
+ * (expired or revoked JWT) rather than the request itself.
+ */
+export const isAuthRejected = (error: { code?: string; message?: string } | null | undefined): boolean =>
+  !!error && (/^PGRST30[0-3]$/.test(error.code || '') || /jwt|token/i.test(error.message || ''));
