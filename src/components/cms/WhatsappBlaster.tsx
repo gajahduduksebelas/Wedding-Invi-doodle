@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Send,
@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { WhatsAppGuest, CoupleData, EventDetail } from '../../types';
 import { GuestCsvImporter, downloadGuestCsvTemplate } from './GuestCsvImporter';
+import { OwnerPicker } from './OwnerPicker';
 import {
   DEFAULT_WA_TEMPLATES,
   formatWhatsAppPhone,
@@ -87,6 +88,14 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
   // New contacts (added by hand or imported) belong to the open tab's side.
   const defaultOwner: WhatsAppGuest['owner'] = ownerTab === 'groom' || ownerTab === 'bride' ? ownerTab : undefined;
   const ownerShort = (o: WhatsAppGuest['owner']) => (o ? ownerNames[o] : null);
+
+  // "Tambah Tamu Satuan": whose guest — preselected from the open tab, must be chosen.
+  const [singleOwner, setSingleOwner] = useState<WhatsAppGuest['owner']>(defaultOwner);
+  const [singleOwnerMissing, setSingleOwnerMissing] = useState(false);
+  useEffect(() => {
+    setSingleOwner(defaultOwner);
+    setSingleOwnerMissing(false);
+  }, [defaultOwner]);
   const ownerLabel = (o: WhatsAppGuest['owner']) => (o ? `Tamu ${ownerNames[o]}` : 'Belum ditandai');
 
   // Add Single Guest Form
@@ -144,6 +153,11 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
       onShowToast('Nama tamu tidak boleh kosong');
       return;
     }
+    if (!singleOwner) {
+      setSingleOwnerMissing(true);
+      onShowToast(`Pilih dulu: Tamu ${ownerNames.groom} atau Tamu ${ownerNames.bride}.`);
+      return;
+    }
 
     const newGuest: WhatsAppGuest = {
       id: `g-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
@@ -151,7 +165,7 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
       phone: singlePhone.trim(),
       category: singleCategory.trim() || 'Umum',
       session: singleSession,
-      owner: defaultOwner,
+      owner: singleOwner,
       status: 'pending',
       notes: singleNotes.trim(),
     };
@@ -161,7 +175,7 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
     setSingleCategory('');
     setSinglePhone('');
     setSingleNotes('');
-    onShowToast(`Tamu "${newGuest.name}" berhasil ditambahkan! 🎉`);
+    onShowToast(`${ownerLabel(newGuest.owner)}: "${newGuest.name}" berhasil ditambahkan! 🎉`);
   };
 
   // Blast single guest via WhatsApp
@@ -730,12 +744,21 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
           <h3 className="text-[16px] font-bold text-[#2b2620] font-heading">
             Tambah Tamu Satuan
           </h3>
-          <span className="ml-auto text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#f9f0e0] text-[#7a7065] border border-[#e6dac5]">
-            {ownerLabel(defaultOwner)}
-          </span>
         </div>
 
         <form onSubmit={handleAddSingleGuest} className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+          <div className="sm:col-span-12">
+            <OwnerPicker
+              value={singleOwner}
+              onChange={(o) => {
+                setSingleOwner(o);
+                setSingleOwnerMissing(false);
+              }}
+              names={ownerNames}
+              missing={singleOwnerMissing}
+            />
+          </div>
+
           <div className="sm:col-span-4">
             <label className="text-[11px] font-bold text-[#7a7065] block uppercase">
               Nama Tamu *

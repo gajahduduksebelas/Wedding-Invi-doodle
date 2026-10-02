@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { WhatsAppGuest } from '../../types';
+import { OwnerPicker } from './OwnerPicker';
 
 export const CSV_TEMPLATE_CONTENT = `Nama Tamu,Nomor WhatsApp,Kategori,Sesi,Catatan
 Bpk. Dr. H. Faisal Anwar & Istri,081234567890,VIP,Akad & Resepsi,Keluarga Besar Pengantin
@@ -107,8 +108,13 @@ export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
   defaultOwner,
 }) => {
   const [owner, setOwner] = useState<WhatsAppGuest['owner']>(defaultOwner);
+  const [ownerMissing, setOwnerMissing] = useState(false);
+  const ownerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (isOpen) setOwner(defaultOwner);
+    if (isOpen) {
+      setOwner(defaultOwner);
+      setOwnerMissing(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
   const [activeTab, setActiveTab] = useState<'upload' | 'manual'>('upload');
@@ -284,6 +290,13 @@ export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
       return;
     }
 
+    if (ownerNames && !owner) {
+      setOwnerMissing(true);
+      ownerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      onShowToast('Pilih dulu: daftar ini Tamu ' + ownerNames.groom + ' atau Tamu ' + ownerNames.bride + '.');
+      return;
+    }
+
     const finalCandidates = skipDuplicates
       ? parsedCandidates.filter((c) => !c.isDuplicate)
       : parsedCandidates;
@@ -347,6 +360,22 @@ export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
           <X className="w-5 h-5" />
         </button>
       </div>
+
+      {/* Whose guests: chosen before uploading */}
+      {ownerNames && (
+        <div ref={ownerRef}>
+          <OwnerPicker
+            value={owner}
+            onChange={(o) => {
+              setOwner(o);
+              setOwnerMissing(false);
+            }}
+            names={ownerNames}
+            label="Daftar tamu ini milik:"
+            missing={ownerMissing}
+          />
+        </div>
+      )}
 
       {/* Template Download Banner / Quick Action */}
       <div className="rounded-xl bg-[#fdfaf5] p-3.5 border border-[#e6dac5] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -562,32 +591,19 @@ export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
             </table>
           </div>
 
-          {/* Whose guests are these? */}
+          {/* Same choice, repeated next to the import button */}
           {ownerNames && (
-            <div className="rounded-xl bg-white border border-[#e6dac5] p-3 flex flex-col sm:flex-row sm:items-center gap-2">
-              <span className="text-[12px] font-bold text-[#2b2620] shrink-0">Daftar tamu ini milik:</span>
-              <div className="grid grid-cols-3 gap-1.5 flex-1">
-                {([
-                  ['groom', `Tamu ${ownerNames.groom}`],
-                  ['bride', `Tamu ${ownerNames.bride}`],
-                  [undefined, 'Belum ditentukan'],
-                ] as const).map(([value, label]) => (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => setOwner(value)}
-                    aria-pressed={owner === value}
-                    className={`px-2 py-2 rounded-lg text-[11.5px] font-bold border transition-all cursor-pointer ${
-                      owner === value
-                        ? 'bg-[#cc3a63] text-white border-[#cc3a63]'
-                        : 'bg-[#f9f0e0] text-[#2b2620] border-[#e6dac5] hover:bg-[#edd9bf]'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <OwnerPicker
+              value={owner}
+              onChange={(o) => {
+                setOwner(o);
+                setOwnerMissing(false);
+              }}
+              names={ownerNames}
+              label="Import sebagai:"
+              missing={ownerMissing}
+              compact
+            />
           )}
 
           {/* Action Confirm Buttons */}
