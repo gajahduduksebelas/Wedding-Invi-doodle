@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 import {
   Send,
   Heart,
@@ -45,8 +45,10 @@ import { RsvpManager } from './RsvpManager';
 import { PasswordManager } from './PasswordManager';
 import { DressCodeEditor } from './DressCodeEditor';
 import { LoveStoryEditor } from './LoveStoryEditor';
+import { AdminAccounts } from './AdminAccounts';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { COUPLE_DATA } from '../../data/weddingData';
+import { mergeEdit } from '../../lib/settingsSync';
 
 type CmsTabId = 'wa-blaster' | 'couple-event' | 'dresscode' | 'lovestory' | 'gallery' | 'video' | 'gifts' | 'rsvp' | 'password';
 
@@ -78,6 +80,9 @@ interface CmsDashboardProps {
   onSaveLoveStory: (stories: LoveStoryItem[]) => void;
   onUpdateWishes: (newWishes: Wish[]) => void;
   onUpdateWaGuests: (newGuests: WhatsAppGuest[]) => void;
+  onClaimWaGuest?: (guestId: string, sentAt: string) => Promise<'ok' | 'taken' | 'error'>;
+  /** Increases whenever another device's changes were merged in. */
+  remoteRevision?: number;
   onSwitchToInvitation: () => void;
   onShowToast: (message: string, type?: 'success' | 'copy') => void;
   onLogout?: () => void;
@@ -95,6 +100,15 @@ const DRAFT_TAB_LABELS: Record<DraftTabId, string> = {
   gallery: 'Galeri',
   video: 'Video',
   gifts: 'Kado',
+};
+
+// Runs onMount once, before the browser paints, each time it (re)mounts.
+const EditorShell: React.FC<{ onMount: () => void; children: React.ReactNode }> = ({ onMount, children }) => {
+  useLayoutEffect(() => {
+    onMount();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return <>{children}</>;
 };
 
 export const CmsDashboard: React.FC<CmsDashboardProps> = ({
@@ -115,6 +129,8 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
   onSaveLoveStory,
   onUpdateWishes,
   onUpdateWaGuests,
+  onClaimWaGuest,
+  remoteRevision = 0,
   onSwitchToInvitation,
   onShowToast,
   onLogout,
@@ -158,6 +174,127 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
     pending.forEach(([, commit]) => commit());
     return pending.map(([tab]) => DRAFT_TAB_LABELS[tab]);
   }, []);
+
+  // --- Editing at the same time on two devices ---
+  // Each editor works on a copy of the data from when it opened (its "base").
+  // Saving merges only what the admin changed in that editor onto the latest
+  // data (which may already hold the partner's changes), and editors with no
+  // unsaved edits reload when the partner's changes arrive.
+  const latestRef = useRef({ couple, events, dressCode, videoConfig, banks, giftAddress, photos });
+  latestRef.current = { couple, events, dressCode, videoConfig, banks, giftAddress, photos };
+
+  type EditorValue = {
+    'couple-event': { couple: CoupleData; events: EventDetail[] };
+    dresscode: DressCodeConfig;
+    lovestory: LoveStoryItem[];
+    gallery: GalleryPhoto[];
+    video: VideoConfig;
+    gifts: { banks: BankAccount[]; address: string };
+  };
+  const snapshot = useCallback(<K extends DraftTabId>(tab: K): EditorValue[K] => {
+    const l = latestRef.current;
+    const values: EditorValue = {
+      'couple-event': { couple: l.couple, events: l.events },
+      dresscode: l.dressCode,
+      lovestory: l.couple.loveStory || [],
+      gallery: l.photos,
+      video: l.videoConfig,
+      gifts: { banks: l.banks, address: l.giftAddress },
+    };
+    return JSON.parse(JSON.stringify(values[tab]));
+  }, []);
+
+  const baseRef = useRef<Partial<{ [K in DraftTabId]: EditorValue[K] }>>({});
+  const [editorRev, setEditorRev] = useState<Record<DraftTabId, number>>({
+    'couple-event': 0,
+    dresscode: 0,
+    lovestory: 0,
+    gallery: 0,
+    video: 0,
+    gifts: 0,
+  });
+  const dirtyTabsRef = useRef(dirtyTabs);
+  dirtyTabsRef.current = dirtyTabs;
+
+  // Partner's changes arrived: reload every editor that has nothing unsaved.
+  useEffect(() => {
+    if (remoteRevision === 0) return;
+    setEditorRev((prev) => {
+      const next = { ...prev };
+      (Object.keys(next) as DraftTabId[]).forEach((tab) => {
+        if (!dirtyTabsRef.current.includes(tab)) next[tab] += 1;
+      });
+      return next;
+    });
+  }, [remoteRevision]);
+
+  const saveEditor = useCallback(
+    <K extends DraftTabId>(tab: K, draft: EditorValue[K]) => {
+      const base = baseRef.current[tab] as EditorValue[K] | undefined;
+      const latest = snapshot(tab);
+      let merged: EditorValue[K] = draft;
+      if (base !== undefined) {
+        if (tab === 'couple-event') {
+          const b = base as EditorValue['couple-event'];
+          const d = draft as EditorValue['couple-event'];
+          const l = latest as EditorValue['couple-event'];
+          merged = { couple: mergeEdit(b.couple, d.couple, l.couple), events: mergeEdit(b.events, d.events, l.events) } as EditorValue[K];
+        } else if (tab === 'gifts') {
+          const b = base as EditorValue['gifts'];
+          const d = draft as EditorValue['gifts'];
+          const l = latest as EditorValue['gifts'];
+          merged = { banks: mergeEdit(b.banks, d.banks, l.banks), address: mergeEdit(b.address, d.address, l.address) } as EditorValue[K];
+        } else {
+          merged = mergeEdit(base, draft, latest);
+        }
+      }
+
+      switch (tab) {
+        case 'couple-event': {
+          const v = merged as EditorValue['couple-event'];
+          onSaveCoupleAndEvents(v.couple, v.events);
+          break;
+        }
+        case 'dresscode':
+          onSaveDressCode(merged as EditorValue['dresscode']);
+          break;
+        case 'lovestory':
+          onSaveLoveStory(merged as EditorValue['lovestory']);
+          break;
+        case 'gallery':
+          onSavePhotos(merged as EditorValue['gallery']);
+          break;
+        case 'video':
+          onSaveVideoConfig(merged as EditorValue['video']);
+          break;
+        case 'gifts': {
+          const v = merged as EditorValue['gifts'];
+          onSaveBanksAndAddress(v.banks, v.address);
+          break;
+        }
+      }
+
+      if (JSON.stringify(merged) !== JSON.stringify(draft)) {
+        // The partner's changes were folded in: reopen the editor on the
+        // merged result so it shows them (nothing of ours is lost — it's saved).
+        setEditorRev((prev) => ({ ...prev, [tab]: prev[tab] + 1 }));
+      } else {
+        baseRef.current[tab] = JSON.parse(JSON.stringify(draft));
+      }
+    },
+    [snapshot, onSaveCoupleAndEvents, onSaveDressCode, onSaveLoveStory, onSavePhotos, onSaveVideoConfig, onSaveBanksAndAddress]
+  );
+
+  const shellFor = (tab: DraftTabId, editor: React.ReactNode) => (
+    <EditorShell
+      key={`${tab}:${editorRev[tab]}`}
+      onMount={() => {
+        baseRef.current[tab] = snapshot(tab) as never;
+      }}
+    >
+      {editor}
+    </EditorShell>
+  );
 
   const handleSaveAll = () => {
     const saved = commitDrafts();
@@ -614,71 +751,84 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
           <WhatsappBlaster
             guests={waGuests}
             onUpdateGuests={onUpdateWaGuests}
+            onClaimGuest={onClaimWaGuest}
             couple={couple}
             events={events}
             onShowToast={onShowToast}
           />
         )}
 
-        {activeTab === 'couple-event' && (
-          <CoupleEventEditor
-            couple={couple}
-            events={events}
-            onSave={onSaveCoupleAndEvents}
-            onShowToast={onShowToast}
-            onDraftChange={(draft) =>
-              setDraft('couple-event', draft && (() => onSaveCoupleAndEvents(draft.couple, draft.events)))
-            }
-          />
-        )}
+        {activeTab === 'couple-event' &&
+          shellFor(
+            'couple-event',
+            <CoupleEventEditor
+              couple={couple}
+              events={events}
+              onSave={(c, e) => saveEditor('couple-event', { couple: c, events: e })}
+              onShowToast={onShowToast}
+              onDraftChange={(draft) =>
+                setDraft('couple-event', draft && (() => saveEditor('couple-event', { couple: draft.couple, events: draft.events })))
+              }
+            />
+          )}
 
-        {activeTab === 'dresscode' && (
-          <DressCodeEditor
-            dressCode={dressCode}
-            onSave={onSaveDressCode}
-            onShowToast={onShowToast}
-            onDraftChange={(draft) => setDraft('dresscode', draft && (() => onSaveDressCode(draft)))}
-          />
-        )}
+        {activeTab === 'dresscode' &&
+          shellFor(
+            'dresscode',
+            <DressCodeEditor
+              dressCode={dressCode}
+              onSave={(v) => saveEditor('dresscode', v)}
+              onShowToast={onShowToast}
+              onDraftChange={(draft) => setDraft('dresscode', draft && (() => saveEditor('dresscode', draft)))}
+            />
+          )}
 
-        {activeTab === 'lovestory' && (
-          <LoveStoryEditor
-            stories={couple.loveStory || []}
-            onSave={onSaveLoveStory}
-            onShowToast={onShowToast}
-            onDraftChange={(draft) => setDraft('lovestory', draft && (() => onSaveLoveStory(draft)))}
-          />
-        )}
+        {activeTab === 'lovestory' &&
+          shellFor(
+            'lovestory',
+            <LoveStoryEditor
+              stories={couple.loveStory || []}
+              onSave={(v) => saveEditor('lovestory', v)}
+              onShowToast={onShowToast}
+              onDraftChange={(draft) => setDraft('lovestory', draft && (() => saveEditor('lovestory', draft)))}
+            />
+          )}
 
-        {activeTab === 'gallery' && (
-          <GalleryEditor
-            photos={photos}
-            onSave={onSavePhotos}
-            onShowToast={onShowToast}
-            onDraftChange={(draft) => setDraft('gallery', draft && (() => onSavePhotos(draft)))}
-          />
-        )}
+        {activeTab === 'gallery' &&
+          shellFor(
+            'gallery',
+            <GalleryEditor
+              photos={photos}
+              onSave={(v) => saveEditor('gallery', v)}
+              onShowToast={onShowToast}
+              onDraftChange={(draft) => setDraft('gallery', draft && (() => saveEditor('gallery', draft)))}
+            />
+          )}
 
-        {activeTab === 'video' && (
-          <VideoEditor
-            videoConfig={videoConfig}
-            onSave={onSaveVideoConfig}
-            onShowToast={onShowToast}
-            onDraftChange={(draft) => setDraft('video', draft && (() => onSaveVideoConfig(draft)))}
-          />
-        )}
+        {activeTab === 'video' &&
+          shellFor(
+            'video',
+            <VideoEditor
+              videoConfig={videoConfig}
+              onSave={(v) => saveEditor('video', v)}
+              onShowToast={onShowToast}
+              onDraftChange={(draft) => setDraft('video', draft && (() => saveEditor('video', draft)))}
+            />
+          )}
 
-        {activeTab === 'gifts' && (
-          <GiftsEditor
-            banks={banks}
-            giftAddress={giftAddress}
-            onSave={onSaveBanksAndAddress}
-            onShowToast={onShowToast}
-            onDraftChange={(draft) =>
-              setDraft('gifts', draft && (() => onSaveBanksAndAddress(draft.banks, draft.address)))
-            }
-          />
-        )}
+        {activeTab === 'gifts' &&
+          shellFor(
+            'gifts',
+            <GiftsEditor
+              banks={banks}
+              giftAddress={giftAddress}
+              onSave={(b, a) => saveEditor('gifts', { banks: b, address: a })}
+              onShowToast={onShowToast}
+              onDraftChange={(draft) =>
+                setDraft('gifts', draft && (() => saveEditor('gifts', { banks: draft.banks, address: draft.address })))
+              }
+            />
+          )}
 
         {activeTab === 'rsvp' && (
           <RsvpManager
@@ -686,6 +836,12 @@ export const CmsDashboard: React.FC<CmsDashboardProps> = ({
             onUpdateWishes={onUpdateWishes}
             onShowToast={onShowToast}
           />
+        )}
+
+        {activeTab === 'password' && (
+          <div className="max-w-[800px] mx-auto mb-6">
+            <AdminAccounts onShowToast={onShowToast} />
+          </div>
         )}
 
         {activeTab === 'password' && (

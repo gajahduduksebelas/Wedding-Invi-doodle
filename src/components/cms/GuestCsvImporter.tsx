@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { WhatsAppGuest } from '../../types';
+import { OwnerPicker } from './OwnerPicker';
 
 export const CSV_TEMPLATE_CONTENT = `Nama Tamu,Nomor WhatsApp,Kategori,Sesi,Catatan
 Bpk. Dr. H. Faisal Anwar & Istri,081234567890,VIP,Akad & Resepsi,Keluarga Besar Pengantin
@@ -91,6 +92,9 @@ interface GuestCsvImporterProps {
   onShowToast: (message: string) => void;
   /** Rendered inside another card (right under its button) instead of as its own card. */
   embedded?: boolean;
+  /** Names for the "whose guests" choice, and the side to preselect. */
+  ownerNames?: { groom: string; bride: string };
+  defaultOwner?: WhatsAppGuest['owner'];
 }
 
 export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
@@ -100,7 +104,19 @@ export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
   onImport,
   onShowToast,
   embedded = false,
+  ownerNames,
+  defaultOwner,
 }) => {
+  const [owner, setOwner] = useState<WhatsAppGuest['owner']>(defaultOwner);
+  const [ownerMissing, setOwnerMissing] = useState(false);
+  const ownerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (isOpen) {
+      setOwner(defaultOwner);
+      setOwnerMissing(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
   const [activeTab, setActiveTab] = useState<'upload' | 'manual'>('upload');
   const panelRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -274,6 +290,13 @@ export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
       return;
     }
 
+    if (ownerNames && !owner) {
+      setOwnerMissing(true);
+      ownerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      onShowToast('Pilih dulu: daftar ini Tamu ' + ownerNames.groom + ' atau Tamu ' + ownerNames.bride + '.');
+      return;
+    }
+
     const finalCandidates = skipDuplicates
       ? parsedCandidates.filter((c) => !c.isDuplicate)
       : parsedCandidates;
@@ -291,6 +314,7 @@ export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
       session: c.session,
       status: 'pending',
       notes: c.notes,
+      owner,
     }));
 
     onImport(newGuests);
@@ -336,6 +360,22 @@ export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
           <X className="w-5 h-5" />
         </button>
       </div>
+
+      {/* Whose guests: chosen before uploading */}
+      {ownerNames && (
+        <div ref={ownerRef}>
+          <OwnerPicker
+            value={owner}
+            onChange={(o) => {
+              setOwner(o);
+              setOwnerMissing(false);
+            }}
+            names={ownerNames}
+            label="Daftar tamu ini milik:"
+            missing={ownerMissing}
+          />
+        </div>
+      )}
 
       {/* Template Download Banner / Quick Action */}
       <div className="rounded-xl bg-[#fdfaf5] p-3.5 border border-[#e6dac5] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -550,6 +590,21 @@ export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
               </tbody>
             </table>
           </div>
+
+          {/* Same choice, repeated next to the import button */}
+          {ownerNames && (
+            <OwnerPicker
+              value={owner}
+              onChange={(o) => {
+                setOwner(o);
+                setOwnerMissing(false);
+              }}
+              names={ownerNames}
+              label="Import sebagai:"
+              missing={ownerMissing}
+              compact
+            />
+          )}
 
           {/* Action Confirm Buttons */}
           <div className="flex items-center justify-between pt-2">

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Send,
@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { WhatsAppGuest, CoupleData, EventDetail } from '../../types';
 import { GuestCsvImporter, downloadGuestCsvTemplate } from './GuestCsvImporter';
+import { OwnerPicker } from './OwnerPicker';
 import {
   DEFAULT_WA_TEMPLATES,
   formatWhatsAppPhone,
@@ -37,6 +38,8 @@ import {
 interface WhatsappBlasterProps {
   guests: WhatsAppGuest[];
   onUpdateGuests: (guests: WhatsAppGuest[]) => void;
+  /** Marks a guest as sent unless another device already did ('taken'). */
+  onClaimGuest?: (guestId: string, sentAt: string) => Promise<'ok' | 'taken' | 'error'>;
   couple: CoupleData;
   events: EventDetail[];
   onShowToast: (message: string, type?: 'success' | 'copy') => void;
@@ -45,6 +48,7 @@ interface WhatsappBlasterProps {
 export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
   guests,
   onUpdateGuests,
+  onClaimGuest,
   couple,
   events,
   onShowToast,
@@ -59,6 +63,40 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'sent'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+
+  // Whose guests to show: the groom's, the bride's, or not marked yet.
+  // Remembered per device, so each of you can stay on your own list.
+  type OwnerTab = 'all' | 'groom' | 'bride' | 'none';
+  const [ownerTab, setOwnerTabState] = useState<OwnerTab>(() => {
+    try {
+      const saved = localStorage.getItem('wa_owner_tab');
+      if (saved === 'groom' || saved === 'bride' || saved === 'none' || saved === 'all') return saved;
+    } catch {
+      /* storage unavailable */
+    }
+    return 'all';
+  });
+  const setOwnerTab = (tab: OwnerTab) => {
+    setOwnerTabState(tab);
+    try {
+      localStorage.setItem('wa_owner_tab', tab);
+    } catch {
+      /* storage unavailable */
+    }
+  };
+  const ownerNames = { groom: couple.groom.nickname || 'Mempelai Pria', bride: couple.bride.nickname || 'Mempelai Wanita' };
+  // New contacts (added by hand or imported) belong to the open tab's side.
+  const defaultOwner: WhatsAppGuest['owner'] = ownerTab === 'groom' || ownerTab === 'bride' ? ownerTab : undefined;
+  const ownerShort = (o: WhatsAppGuest['owner']) => (o ? ownerNames[o] : null);
+
+  // "Tambah Tamu Satuan": whose guest — preselected from the open tab, must be chosen.
+  const [singleOwner, setSingleOwner] = useState<WhatsAppGuest['owner']>(defaultOwner);
+  const [singleOwnerMissing, setSingleOwnerMissing] = useState(false);
+  useEffect(() => {
+    setSingleOwner(defaultOwner);
+    setSingleOwnerMissing(false);
+  }, [defaultOwner]);
+  const ownerLabel = (o: WhatsAppGuest['owner']) => (o ? `Tamu ${ownerNames[o]}` : 'Belum ditandai');
 
   // Add Single Guest Form
   const [singleName, setSingleName] = useState('');
@@ -100,10 +138,6 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
   const pendingCount = totalGuests - sentCount;
   const progressPercent = totalGuests > 0 ? Math.round((sentCount / totalGuests) * 100) : 0;
 
-  // Next pending guest for queue blasting
-  const nextPendingGuest = useMemo(() => {
-    return guests.find((g) => g.status === 'pending');
-  }, [guests]);
 
   // Handle template selection
   const handleSelectTemplate = (template: WhatsAppTemplateItem) => {
@@ -119,6 +153,11 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
       onShowToast('Nama tamu tidak boleh kosong');
       return;
     }
+    if (!singleOwner) {
+      setSingleOwnerMissing(true);
+      onShowToast(`Pilih dulu: Tamu ${ownerNames.groom} atau Tamu ${ownerNames.bride}.`);
+      return;
+    }
 
     const newGuest: WhatsAppGuest = {
       id: `g-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
@@ -126,6 +165,7 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
       phone: singlePhone.trim(),
       category: singleCategory.trim() || 'Umum',
       session: singleSession,
+      owner: singleOwner,
       status: 'pending',
       notes: singleNotes.trim(),
     };
@@ -135,11 +175,12 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
     setSingleCategory('');
     setSinglePhone('');
     setSingleNotes('');
-    onShowToast(`Tamu "${newGuest.name}" berhasil ditambahkan! 🎉`);
+    onShowToast(`${ownerLabel(newGuest.owner)}: "${newGuest.name}" berhasil ditambahkan! 🎉`);
   };
 
   // Blast single guest via WhatsApp
-  const handleBlastGuest = (guest: WhatsAppGuest) => {
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const handleBlastGuest = async (guest: WhatsAppGuest) => {
     const personalizedLink = generateGuestUrl(guest.name);
     const message = composeWhatsAppMessage(customTemplateText, {
       nama: guest.name,
@@ -149,23 +190,48 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
       lokasi: weddingLocation,
       sesi: guest.session,
     });
-
     const waUrl = buildWhatsAppLink(guest.phone, message);
+    const sentAt = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
-    // Open WhatsApp Web / App
-    window.open(waUrl, '_blank', 'noopener,noreferrer');
+    // Re-sending to someone already marked as sent is a deliberate choice.
+    if (guest.status === 'sent') {
+      if (!confirm(`${guest.name} sudah ditandai terkirim. Kirim ulang undangannya?`)) return;
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+      onShowToast(`Undangan untuk ${guest.name} dibuka di WhatsApp! 📲`);
+      return;
+    }
 
-    // Mark as sent
-    const updated = guests.map((g) =>
-      g.id === guest.id
-        ? {
-            ...g,
-            status: 'sent' as const,
-            sentAt: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-          }
-        : g
-    );
-    onUpdateGuests(updated);
+    if (!onClaimGuest) {
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+      onUpdateGuests(guests.map((g) => (g.id === guest.id ? { ...g, status: 'sent' as const, sentAt } : g)));
+      onShowToast(`Undangan untuk ${guest.name} dibuka di WhatsApp! 📲`);
+      return;
+    }
+
+    // Another device may be blasting the same list: claim the guest first so
+    // nobody gets the invitation twice. The window is opened right away (still
+    // inside the tap, so it isn't blocked) and pointed at WhatsApp once the
+    // claim succeeds.
+    const win = window.open('', '_blank');
+    setSendingId(guest.id);
+    const result = await onClaimGuest(guest.id, sentAt);
+    setSendingId(null);
+    if (result === 'taken') {
+      win?.close();
+      onShowToast(`${guest.name} sudah dikirimi dari perangkat lain — dilewati. ✅`);
+      return;
+    }
+    if (result === 'error') {
+      win?.close();
+      onShowToast('⚠️ Gagal memperbarui status di server. Periksa koneksi lalu coba lagi.');
+      return;
+    }
+    if (win) {
+      win.opener = null;
+      win.location.href = waUrl;
+    } else {
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+    }
     onShowToast(`Undangan untuk ${guest.name} dibuka di WhatsApp! 📲`);
   };
 
@@ -210,6 +276,14 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
       setSelectedIds(new Set());
       onShowToast(`${ids.length} kontak dihapus.`);
     }
+  };
+
+  const handleBulkAssignOwner = (owner: WhatsAppGuest['owner']) => {
+    const count = guests.filter((g) => selectedIds.has(g.id)).length;
+    if (count === 0) return;
+    onUpdateGuests(guests.map((g) => (selectedIds.has(g.id) ? { ...g, owner } : g)));
+    setSelectedIds(new Set());
+    onShowToast(`${count} kontak ditandai sebagai ${ownerLabel(owner)}.`);
   };
 
   // --- Edit a contact ---
@@ -288,6 +362,18 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
     }
   };
 
+  const ownerCounts = useMemo(
+    () => ({
+      all: guests.length,
+      groom: guests.filter((g) => g.owner === 'groom').length,
+      bride: guests.filter((g) => g.owner === 'bride').length,
+      none: guests.filter((g) => !g.owner).length,
+    }),
+    [guests]
+  );
+  // The "not marked" tab only shows while some contacts are unmarked.
+  const visibleOwnerTab: OwnerTab = ownerTab === 'none' && ownerCounts.none === 0 ? 'all' : ownerTab;
+
   // Filtered list
   const filteredGuests = useMemo(() => {
     return guests.filter((g) => {
@@ -302,9 +388,19 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
       const matchesCat =
         categoryFilter === 'all' || !categories.includes(categoryFilter) ? true : g.category === categoryFilter;
 
-      return matchesSearch && matchesStatus && matchesCat;
+      const matchesOwner =
+        visibleOwnerTab === 'all' ? true : visibleOwnerTab === 'none' ? !g.owner : g.owner === visibleOwnerTab;
+
+      return matchesSearch && matchesStatus && matchesCat && matchesOwner;
     });
-  }, [guests, searchQuery, statusFilter, categoryFilter, categories]);
+  }, [guests, searchQuery, statusFilter, categoryFilter, categories, visibleOwnerTab]);
+
+  // Next pending guest for queue blasting. It follows the search & category
+  // filter, so two people can blast at the same time by each taking a
+  // different category (or simply both run the queue — a guest that the
+  // other device already sent to is skipped).
+  const nextPendingGuest = useMemo(() => filteredGuests.find((g) => g.status === 'pending'), [filteredGuests]);
+  const queueIsFiltered = filteredGuests.length !== guests.length;
 
   const selectedCount = guests.filter((g) => selectedIds.has(g.id)).length;
   const allFilteredSelected = filteredGuests.length > 0 && filteredGuests.every((g) => selectedIds.has(g.id));
@@ -395,6 +491,8 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
         {/* CSV import opens right here, under its button */}
         <GuestCsvImporter
           embedded
+          ownerNames={ownerNames}
+          defaultOwner={defaultOwner}
           isOpen={isBulkOpen}
           onClose={() => setIsBulkOpen(false)}
           existingGuests={guests}
@@ -451,6 +549,11 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
             <div>
               <span className="text-[11px] font-bold text-[#51582f] uppercase tracking-wider block">
                 Antrean Blast Berikutnya
+                {queueIsFiltered && (
+                  <span className="ml-1.5 normal-case tracking-normal font-semibold text-[#7a7065]">
+                    · sesuai filter{activeCategoryFilter !== 'all' ? `: ${activeCategoryFilter}` : ''}
+                  </span>
+                )}
               </span>
               <h3 className="text-[18px] font-bold text-[#2b2620] font-heading">
                 {nextPendingGuest.name}
@@ -644,6 +747,18 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
         </div>
 
         <form onSubmit={handleAddSingleGuest} className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+          <div className="sm:col-span-12">
+            <OwnerPicker
+              value={singleOwner}
+              onChange={(o) => {
+                setSingleOwner(o);
+                setSingleOwnerMissing(false);
+              }}
+              names={ownerNames}
+              missing={singleOwnerMissing}
+            />
+          </div>
+
           <div className="sm:col-span-4">
             <label className="text-[11px] font-bold text-[#7a7065] block uppercase">
               Nama Tamu *
@@ -747,8 +862,35 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
           </div>
         </div>
 
+        {/* Whose guests: groom's / bride's list */}
+        <div className="flex gap-1.5 p-1 rounded-2xl bg-[#f9f0e0] border border-[#e6dac5] overflow-x-auto" role="tablist">
+          {(
+            [
+              ['all', 'Semua'],
+              ['groom', `Tamu ${ownerNames.groom}`],
+              ['bride', `Tamu ${ownerNames.bride}`],
+              ...(ownerCounts.none > 0 ? ([['none', 'Belum ditandai']] as const) : []),
+            ] as [OwnerTab, string][]
+          ).map(([tab, label]) => (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={visibleOwnerTab === tab}
+              onClick={() => setOwnerTab(tab)}
+              className={`flex-1 min-w-fit whitespace-nowrap px-3 py-2 rounded-xl text-[12px] font-bold transition-all cursor-pointer ${
+                visibleOwnerTab === tab
+                  ? 'bg-[#cc3a63] text-white shadow-[2px_2px_0px_#4a4238] border border-[#4a4238]'
+                  : 'text-[#2b2620] hover:bg-[#edd9bf] border border-transparent'
+              }`}
+            >
+              {label} <span className={visibleOwnerTab === tab ? 'text-white/80' : 'text-[#7a7065]'}>({ownerCounts[tab]})</span>
+            </button>
+          ))}
+        </div>
+
         {/* Filter & Search Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
           <div className="sm:col-span-5 relative">
             <Search className="w-4 h-4 text-[#7a7065] absolute left-3 top-2.5" />
             <input
@@ -807,8 +949,22 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
             Pilih semua{filteredGuests.length !== guests.length ? ' (hasil filter)' : ''}
           </label>
           {selectedCount > 0 && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-[12px] font-bold text-[#cc3a63]">{selectedCount} dipilih</span>
+              <button
+                type="button"
+                onClick={() => handleBulkAssignOwner('groom')}
+                className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-[#2b2620] bg-white border border-[#e6dac5] hover:bg-[#f9f0e0] cursor-pointer whitespace-nowrap"
+              >
+                → Tamu {ownerNames.groom}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBulkAssignOwner('bride')}
+                className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-[#2b2620] bg-white border border-[#e6dac5] hover:bg-[#f9f0e0] cursor-pointer whitespace-nowrap"
+              >
+                → Tamu {ownerNames.bride}
+              </button>
               <button
                 type="button"
                 onClick={() => setSelectedIds(new Set())}
@@ -865,9 +1021,16 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
                       </div>
                     </div>
 
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#f9f0e0] text-[#2b2620] border border-[#e6dac5] shrink-0">
-                      {g.category}
-                    </span>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#f9f0e0] text-[#2b2620] border border-[#e6dac5]">
+                        {g.category}
+                      </span>
+                      {ownerShort(g.owner) && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#fcecf0] text-[#cc3a63] border border-[#f5ccd7]">
+                          {ownerShort(g.owner)}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Actions for Mobile: send & copy first, then the small tools */}
@@ -1019,9 +1182,16 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
                       </td>
 
                       <td className="py-2.5 px-2">
-                        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#f9f0e0] text-[#2b2620] border border-[#e6dac5]">
-                          {g.category}
-                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#f9f0e0] text-[#2b2620] border border-[#e6dac5]">
+                            {g.category}
+                          </span>
+                          {ownerShort(g.owner) && (
+                            <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#fcecf0] text-[#cc3a63] border border-[#f5ccd7]">
+                              {ownerShort(g.owner)}
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       <td className="py-2.5 px-2 text-center">
@@ -1200,6 +1370,21 @@ export const WhatsappBlaster: React.FC<WhatsappBlasterProps> = ({
                 </select>
               </label>
             </div>
+
+            <label className="text-[11px] font-bold text-[#7a7065] uppercase">
+              Tamu dari
+              <select
+                value={editing.owner || ''}
+                onChange={(e) =>
+                  setEditing({ ...editing, owner: (e.target.value || undefined) as WhatsAppGuest['owner'] })
+                }
+                className="w-full mt-1 px-2.5 py-2 rounded-xl border border-[#4a4238] bg-[#fdfaf5] text-[13px] font-bold normal-case text-[#2b2620] focus:outline-none"
+              >
+                <option value="groom">Tamu {ownerNames.groom}</option>
+                <option value="bride">Tamu {ownerNames.bride}</option>
+                <option value="">Belum ditandai</option>
+              </select>
+            </label>
 
             <label className="text-[11px] font-bold text-[#7a7065] uppercase">
               Catatan
