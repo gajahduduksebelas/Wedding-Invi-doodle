@@ -91,6 +91,9 @@ interface GuestCsvImporterProps {
   onShowToast: (message: string) => void;
   /** Rendered inside another card (right under its button) instead of as its own card. */
   embedded?: boolean;
+  /** Names for the "whose guests" choice, and the side to preselect. */
+  ownerNames?: { groom: string; bride: string };
+  defaultOwner?: WhatsAppGuest['owner'];
 }
 
 export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
@@ -100,7 +103,14 @@ export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
   onImport,
   onShowToast,
   embedded = false,
+  ownerNames,
+  defaultOwner,
 }) => {
+  const [owner, setOwner] = useState<WhatsAppGuest['owner']>(defaultOwner);
+  useEffect(() => {
+    if (isOpen) setOwner(defaultOwner);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
   const [activeTab, setActiveTab] = useState<'upload' | 'manual'>('upload');
   const panelRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -291,6 +301,7 @@ export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
       session: c.session,
       status: 'pending',
       notes: c.notes,
+      owner,
     }));
 
     onImport(newGuests);
@@ -550,6 +561,34 @@ export const GuestCsvImporter: React.FC<GuestCsvImporterProps> = ({
               </tbody>
             </table>
           </div>
+
+          {/* Whose guests are these? */}
+          {ownerNames && (
+            <div className="rounded-xl bg-white border border-[#e6dac5] p-3 flex flex-col sm:flex-row sm:items-center gap-2">
+              <span className="text-[12px] font-bold text-[#2b2620] shrink-0">Daftar tamu ini milik:</span>
+              <div className="grid grid-cols-3 gap-1.5 flex-1">
+                {([
+                  ['groom', `Tamu ${ownerNames.groom}`],
+                  ['bride', `Tamu ${ownerNames.bride}`],
+                  [undefined, 'Belum ditentukan'],
+                ] as const).map(([value, label]) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => setOwner(value)}
+                    aria-pressed={owner === value}
+                    className={`px-2 py-2 rounded-lg text-[11.5px] font-bold border transition-all cursor-pointer ${
+                      owner === value
+                        ? 'bg-[#cc3a63] text-white border-[#cc3a63]'
+                        : 'bg-[#f9f0e0] text-[#2b2620] border-[#e6dac5] hover:bg-[#edd9bf]'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Action Confirm Buttons */}
           <div className="flex items-center justify-between pt-2">

@@ -201,6 +201,11 @@ do $$ begin
 exception when duplicate_object then null;
 end $$;
 
+-- 11. Whose guest each WhatsApp contact is (groom's or bride's side; null = not set).
+alter table wa_guests add column if not exists owner text;
+alter table wa_guests drop constraint if exists wa_guests_owner_check;
+alter table wa_guests add constraint wa_guests_owner_check check (owner is null or owner in ('groom', 'bride'));
+
 -- Seed the single settings row with placeholder defaults (CMS will overwrite via first save)
 insert into site_settings (id, couple, events, banks, photos, video_config, gift_address)
 values (

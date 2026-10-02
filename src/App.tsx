@@ -182,6 +182,7 @@ export default function App() {
     status: g.status,
     sentAt: g.sent_at ?? undefined,
     notes: g.notes ?? undefined,
+    owner: g.owner === 'groom' || g.owner === 'bride' ? g.owner : undefined,
   });
 
   useEffect(() => {
@@ -627,6 +628,7 @@ export default function App() {
           status: g.status,
           sent_at: g.sentAt ?? null,
           notes: g.notes ?? null,
+          owner: g.owner ?? null,
         }))
       );
       if (error) {

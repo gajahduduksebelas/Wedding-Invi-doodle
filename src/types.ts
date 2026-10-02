@@ -121,6 +121,8 @@ export interface WhatsAppGuest {
   status: 'pending' | 'sent';
   sentAt?: string;
   notes?: string;
+  /** Whose guest: invited by the groom's or the bride's side (unset = not marked yet). */
+  owner?: 'groom' | 'bride';
 }
 
 export interface AppSettings {
